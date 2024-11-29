@@ -3,17 +3,16 @@ package repository
 import (
 	"golang-todo-api-tdd-ddd/domain"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type ITodoRepository interface {
-	GetAllTodos() (*[]domain.Todo, error)
-	GetTodoByID(todoID uuid.UUID) (*domain.Todo, error)
-	GetTodosByUserID(userID uuid.UUID) (*[]domain.Todo, error)
-	CreateTodo(todo *domain.Todo) (*domain.Todo, error)
-	UpdateTodo(todo *domain.Todo) (*domain.Todo, error)
-	DeleteTodo(todoID uuid.UUID) error
+	GetAllTodos(todos *[]domain.Todo) *gorm.DB
+	GetTodoByID(todo *domain.Todo, todoID string) *gorm.DB
+	GetTodosByUserID(todos *[]domain.Todo, userID string) *gorm.DB
+	CreateTodo(todo *domain.Todo) *gorm.DB
+	UpdateTodo(todo *domain.Todo) *gorm.DB
+	DeleteTodo(todoID string) error
 }
 
 type TodoRepository struct {
@@ -24,44 +23,44 @@ func NewTodoRepository(db *gorm.DB) *TodoRepository {
 	return &TodoRepository{db: db}
 }
 
-func (todoRepo *TodoRepository) GetAllTodos() (*[]domain.Todo, error) {
-	var todos []domain.Todo
+func (todoRepo *TodoRepository) GetAllTodos(todos *[]domain.Todo) *gorm.DB {
 
 	result := todoRepo.db.Find(&todos)
 
-	return &todos, result.Error
+	return result
 }
 
-func (todoRepo *TodoRepository) GetTodoByID(todoID uuid.UUID) (*domain.Todo, error) {
-	var todo domain.Todo
+func (todoRepo *TodoRepository) GetTodoByID(todo *domain.Todo, todoID string) *gorm.DB {
 
-	result := todoRepo.db.First(&todo, todoID)
+	result := todoRepo.db.Where("id = ?", todoID).First(&todo)
 
-	return &todo, result.Error
+	return result
 }
 
-func (todoRepo *TodoRepository) GetTodosByUserID(userID uuid.UUID) (*[]domain.Todo, error) {
-	var todos *[]domain.Todo
+func (todoRepo *TodoRepository) GetTodosByUserID(todos *[]domain.Todo, userID string) *gorm.DB {
 
-	result := todoRepo.db.Find(&todos, domain.Todo{UserID: userID})
+	result := todoRepo.db.Where("user_id = ?", userID).Find(&todos)
 
-	return todos, result.Error
+	return result
 }
 
-func (todoRepo *TodoRepository) CreateTodo(todo *domain.Todo) (*domain.Todo, error) {
-	result := todoRepo.db.Create(todo)
+func (todoRepo *TodoRepository) CreateTodo(todo *domain.Todo) *gorm.DB {
 
-	return todo, result.Error
+	result := todoRepo.db.Create(&todo)
+
+	return result
 }
 
-func (todoRepo *TodoRepository) UpdateTodo(todo *domain.Todo) (*domain.Todo, error) {
-	result := todoRepo.db.Save(todo)
+func (todoRepo *TodoRepository) UpdateTodo(todo *domain.Todo) *gorm.DB {
 
-	return todo, result.Error
+	result := todoRepo.db.Save(&todo)
+
+	return result
 }
 
-func (todoRepo *TodoRepository) DeleteTodo(todoID uuid.UUID) error {
-	result := todoRepo.db.Delete(&domain.Todo{}, todoID)
+func (todoRepo *TodoRepository) DeleteTodo(todoID string) *gorm.DB {
 
-	return result.Error
+	result := todoRepo.db.Where("id = ?", todoID).Delete(&domain.Todo{})
+
+	return result
 }

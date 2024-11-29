@@ -3,16 +3,15 @@ package repository
 import (
 	"golang-todo-api-tdd-ddd/domain"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type IUserRepository interface {
-	GetAllUsers() (*[]domain.User, error)
-	GetUserByID(userID uuid.UUID) (*domain.User, error)
-	CreateUser(user *domain.User) (*domain.User, error)
-	UpdateUser(user *domain.User) (*domain.User, error)
-	DeleteUser(userID uuid.UUID) error
+	GetAllUsers(users *[]domain.User) *gorm.DB
+	GetUserByID(user *domain.User, userID string) *gorm.DB
+	CreateUser(user *domain.User) *gorm.DB
+	UpdateUser(user *domain.User) *gorm.DB
+	DeleteUser(userID string) *gorm.DB
 }
 
 type UserRepository struct {
@@ -23,36 +22,37 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (userRepo *UserRepository) GetAllUsers() (*[]domain.User, error) {
-	var users []domain.User
+func (userRepo *UserRepository) GetAllUsers(users *[]domain.User) *gorm.DB {
 
 	result := userRepo.db.Find(&users)
 
-	return &users, result.Error
+	return result
 }
 
-func (userRepo *UserRepository) GetUserByID(userID uuid.UUID) (*domain.User, error) {
-	var user domain.User
+func (userRepo *UserRepository) GetUserByID(user *domain.User, userID string) *gorm.DB {
 
-	result := userRepo.db.First(&user, userID)
+	result := userRepo.db.Where("id = ?", userID).First(&user)
 
-	return &user, result.Error
+	return result
 }
 
-func (userRepo *UserRepository) CreateUser(user *domain.User) (*domain.User, error) {
-	result := userRepo.db.Create(user)
+func (userRepo *UserRepository) CreateUser(user *domain.User) *gorm.DB {
 
-	return user, result.Error
+	result := userRepo.db.Create(&user)
+
+	return result
 }
 
-func (userRepo *UserRepository) UpdateUser(user *domain.User) (*domain.User, error) {
-	result := userRepo.db.Save(user)
+func (userRepo *UserRepository) UpdateUser(user *domain.User) *gorm.DB {
 
-	return user, result.Error
+	result := userRepo.db.Save(&user)
+
+	return result
 }
 
-func (userRepo *UserRepository) DeleteUser(userID uuid.UUID) error {
-	result := userRepo.db.Delete(&domain.User{}, userID)
+func (userRepo *UserRepository) DeleteUser(userID string) *gorm.DB {
 
-	return result.Error
+	result := userRepo.db.Where("id = ?", userID).Delete(&domain.User{})
+
+	return result
 }

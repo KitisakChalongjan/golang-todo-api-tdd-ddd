@@ -1,22 +1,28 @@
 package main
 
 import (
+	"golang-todo-api-tdd-ddd/core"
 	"log"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	echo := echo.New()
+	e := echo.New()
 
-	db, err := ConnectPostgresDB()
+	db, err := core.ConnectPostgresDB()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println(db.Error)
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Okay")
+	})
 
-	err = echo.Start(":1323")
+	core.InitializeHandler(e, db)
+
+	err = e.Start(":1323")
 
 	if err != nil {
 		log.Fatal(err)

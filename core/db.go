@@ -1,7 +1,8 @@
-package main
+package core
 
 import (
 	"golang-todo-api-tdd-ddd/domain"
+	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,7 +15,14 @@ func ConnectPostgresDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&domain.Todo{}, &domain.User{})
+	log.Println("database connected.")
+
+	err = db.AutoMigrate(&domain.Todo{}, &domain.User{})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("database migrate successful.")
 
 	return db, nil
 }
