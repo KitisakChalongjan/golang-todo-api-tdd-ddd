@@ -3,56 +3,133 @@ package repository
 import (
 	"golang-todo-api-tdd-ddd/domain"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type IUserRepository interface {
-	GetAllUsers(users *[]domain.User) *gorm.DB
-	GetUserByID(user *domain.User, userID string) *gorm.DB
-	CreateUser(user *domain.User) *gorm.DB
-	UpdateUser(user *domain.User) *gorm.DB
-	DeleteUser(userID string) *gorm.DB
+	GetAllUsers(users *[]domain.User) error
+	GetUser(user *domain.User, userID string) error
+	CreateUser(user *domain.User) error
+	UpdateUser(userID string, userDTO *domain.UpdateUserDTO) error
+	DeleteUser(userID string) error
 }
 
 type UserRepository struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func NewUserRepository(db *gorm.DB) *UserRepository {
-	return &UserRepository{db: db}
+	return &UserRepository{DB: db}
 }
 
-func (userRepo *UserRepository) GetAllUsers(users *[]domain.User) *gorm.DB {
+func (userRepo *UserRepository) GetAllUsers(users *[]domain.User) error {
 
-	result := userRepo.db.Find(&users)
+	// get all users
+	if err := userRepo.DB.Find(&users).Error; err != nil {
+		return err
+	}
 
-	return result
+	return nil
 }
 
-func (userRepo *UserRepository) GetUserByID(user *domain.User, userID string) *gorm.DB {
+func (userRepo *UserRepository) GetUser(user *domain.User, userID string) error {
 
-	result := userRepo.db.Where("id = ?", userID).First(&user)
+	// get user by id
+	if err := userRepo.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		return err
+	}
 
-	return result
+	return nil
 }
 
-func (userRepo *UserRepository) CreateUser(user *domain.User) *gorm.DB {
+// create user
+func (userRepo *UserRepository) CreateUser(user *domain.User, userDTO *domain.CreateUserDTO) error {
 
-	result := userRepo.db.Create(&user)
+	// begin transaction
+	tx := userRepo.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
-	return result
+	// check transaction error
+	if err := tx.Error; err != nil {
+		return err
+	}
+
+	user.ID = uuid.New().String()
+	user.Name = userDTO.Name
+	user.Email = userDTO.Email
+	user.ProfileImgURL = userDTO.ProfileImgURL
+
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// commit transaction when no error
+	return tx.Commit().Error
 }
 
-func (userRepo *UserRepository) UpdateUser(user *domain.User) *gorm.DB {
+// update user
+func (userRepo *UserRepository) UpdateUser(user *domain.User, userDTO *domain.UpdateUserDTO) error {
 
-	result := userRepo.db.Save(&user)
+	// begin transaction
+	tx := userRepo.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
-	return result
+	// check transaction error
+	if err := tx.Error; err != nil {
+		return err
+	}
+
+	// get user by id
+	if err := tx.Where("id = ?", userDTO.ID).First(user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// assign userDTO to user
+	user.Name = userDTO.Name
+	user.Email = userDTO.Email
+	user.ProfileImgURL = userDTO.ProfileImgURL
+
+	// save user
+	if err := tx.Save(user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// commit transaction when no error
+	return tx.Commit().Error
 }
 
-func (userRepo *UserRepository) DeleteUser(userID string) *gorm.DB {
+func (userRepo *UserRepository) DeleteUser(userID string) error {
 
-	result := userRepo.db.Where("id = ?", userID).Delete(&domain.User{})
+	// begin transaction
+	tx := userRepo.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
-	return result
+	// check transaction error
+	if err := tx.Error; err != nil {
+		return err
+	}
+
+	// delete user by id
+	if err := tx.Where("id = ?", userID).Delete(&domain.User{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }

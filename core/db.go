@@ -9,8 +9,12 @@ import (
 )
 
 func ConnectPostgresDB() (*gorm.DB, error) {
+
 	connectionString := "user=postgres password=Dewsmaller1* dbname=postgres host=localhost port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{})
+
+	dialector := postgres.Open(connectionString)
+
+	db, err := gorm.Open(dialector, &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}

@@ -51,7 +51,7 @@ func GetUserByID(c echo.Context, userService *service.UserService) error {
 
 	userID := c.Param("userID")
 
-	err := userService.GetUserByID(&user, userID)
+	err := userService.GetUser(&user, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
@@ -69,7 +69,7 @@ func CreateUser(c echo.Context, userService *service.UserService) error {
 		return c.JSON(http.StatusBadRequest, "invalid request.")
 	}
 
-	err = userService.CreateUser(&user, userDTO)
+	err = userService.CreateUser(&user, &userDTO)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "fail to create user.")
 	}
@@ -87,7 +87,7 @@ func UpdateUser(c echo.Context, userService *service.UserService) error {
 		return c.JSON(http.StatusBadRequest, "invalid request :"+err.Error())
 	}
 
-	err = userService.UpdateUser(&user, userDTO)
+	err = userService.UpdateUser(&user, &userDTO)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "fail to update user : "+err.Error())
 	}

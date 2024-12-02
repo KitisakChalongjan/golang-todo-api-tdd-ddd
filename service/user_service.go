@@ -4,7 +4,7 @@ import (
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/repository"
 
-	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -17,53 +17,43 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 
 func (userService *UserService) GetAllUser(users *[]domain.User) error {
 
-	result := userService.userRepo.GetAllUsers(users)
-	if result.Error != nil {
-		return result.Error
+	if err := userService.userRepo.GetAllUsers(users); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (userService *UserService) GetUserByID(user *domain.User, userID string) error {
+func (userService *UserService) GetUser(user *domain.User, userID string) error {
 
-	result := userService.userRepo.GetUserByID(user, userID)
-	if result.Error != nil {
-		return result.Error
+	if err := userService.userRepo.GetUser(user, userID); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (userService *UserService) CreateUser(user *domain.User, userDTO domain.CreateUserDTO) error {
+func (userService *UserService) CreateUser(user *domain.User, userDTO *domain.CreateUserDTO) error {
 
-	user.ID = uuid.New().String()
-	user.Name = userDTO.Name
-	user.Email = userDTO.Email
-	user.ProfileImgURL = userDTO.ProfileImgURL
+	bytes, err := bcrypt.GenerateFromPassword([]byte(userDTO.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
 
-	result := userService.userRepo.CreateUser(user)
-	if result.Error != nil {
-		return result.Error
+	userDTO.Password = string(bytes)
+
+	if err := userService.userRepo.CreateUser(user, userDTO); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (userService *UserService) UpdateUser(user *domain.User, userDTO domain.UpdateUserDTO) error {
+func (userService *UserService) UpdateUser(user *domain.User, userDTO *domain.UpdateUserDTO) error {
 
-	result := userService.userRepo.GetUserByID(user, userDTO.ID)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	user.Name = userDTO.Name
-	user.Email = userDTO.Email
-	user.ProfileImgURL = userDTO.ProfileImgURL
-
-	result = userService.userRepo.UpdateUser(user)
-	if result.Error != nil {
-		return result.Error
+	err := userService.userRepo.UpdateUser(user, userDTO)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -71,9 +61,9 @@ func (userService *UserService) UpdateUser(user *domain.User, userDTO domain.Upd
 
 func (userService *UserService) DeleteUser(userID string) error {
 
-	result := userService.userRepo.DeleteUser(userID)
-	if result.Error != nil {
-		return result.Error
+	err := userService.userRepo.DeleteUser(userID)
+	if err != nil {
+		return err
 	}
 
 	return nil
