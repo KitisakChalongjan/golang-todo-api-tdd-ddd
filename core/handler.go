@@ -16,4 +16,5 @@ func InitializeHandler(e *echo.Echo, db *gorm.DB) {
 
 	handler.InitializeTodoHandler(e, db)
 	handler.InitializeUserHandler(e, db)
+	handler.InitializeAuthenHandler(e, db)
 }

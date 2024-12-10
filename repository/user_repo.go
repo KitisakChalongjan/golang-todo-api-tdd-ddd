@@ -4,57 +4,79 @@ import (
 	"golang-todo-api-tdd-ddd/domain"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type IUserRepository interface {
 	GetAllUsers(users *[]domain.User) error
-	GetUser(user *domain.User, userID string) error
+	GetUserById(user *domain.User, userID string) error
 	CreateUser(user *domain.User) error
-	UpdateUser(userID string, userDTO *domain.UpdateUserDTO) error
+	UpdateUser(userID string, userDTO domain.UpdateUserDTO) error
 	DeleteUser(userID string) error
+	GetUserByCredential(loginDTO domain.LogingDTO) error
 }
 
 type UserRepository struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
 func NewUserRepository(db *gorm.DB) *UserRepository {
-	return &UserRepository{DB: db}
+	return &UserRepository{db: db}
 }
 
-func (userRepo *UserRepository) GetAllUsers(users *[]domain.User) error {
+func (repo *UserRepository) GetAllUsers(allUserDTO *[]domain.GetUserDTO) error {
 
-	// get all users
-	if err := userRepo.DB.Find(&users).Error; err != nil {
+	allUser := []domain.User{}
+
+	if err := repo.db.Find(&allUser).Error; err != nil {
 		return err
+	}
+
+	*allUserDTO = make([]domain.GetUserDTO, len(allUser))
+
+	for i, user := range allUser {
+		(*allUserDTO)[i] = domain.GetUserDTO{
+			ID:            user.ID,
+			Name:          user.Name,
+			Email:         user.Email,
+			ProfileImgURL: user.ProfileImgURL,
+			Username:      user.Username,
+			CreatedAt:     user.CreatedAt,
+		}
 	}
 
 	return nil
 }
 
-func (userRepo *UserRepository) GetUser(user *domain.User, userID string) error {
+func (repo *UserRepository) GetUserById(userDTO *domain.GetUserDTO, userID string) error {
 
-	// get user by id
-	if err := userRepo.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	user := domain.User{}
+
+	if err := repo.db.Where("id = ?", userID).First(&user).Error; err != nil {
 		return err
 	}
+
+	userDTO.ID = user.ID
+	userDTO.Name = user.Name
+	userDTO.Email = user.Email
+	userDTO.ProfileImgURL = user.ProfileImgURL
+	userDTO.Username = user.Username
+	userDTO.CreatedAt = user.CreatedAt
 
 	return nil
 }
 
 // create user
-func (userRepo *UserRepository) CreateUser(user *domain.User, userDTO *domain.CreateUserDTO) error {
+func (repo *UserRepository) CreateUser(user *domain.User, userDTO domain.CreateUserDTO) error {
 
-	// begin transaction
-	tx := userRepo.DB.Begin()
+	tx := repo.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
 
-	// check transaction error
 	if err := tx.Error; err != nil {
 		return err
 	}
@@ -63,71 +85,79 @@ func (userRepo *UserRepository) CreateUser(user *domain.User, userDTO *domain.Cr
 	user.Name = userDTO.Name
 	user.Email = userDTO.Email
 	user.ProfileImgURL = userDTO.ProfileImgURL
+	user.Username = userDTO.Username
+	user.PasswordHash = userDTO.Password
 
 	if err := tx.Create(&user).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// commit transaction when no error
 	return tx.Commit().Error
 }
 
 // update user
-func (userRepo *UserRepository) UpdateUser(user *domain.User, userDTO *domain.UpdateUserDTO) error {
+func (repo *UserRepository) UpdateUser(user *domain.User, userDTO *domain.UpdateUserDTO) error {
 
-	// begin transaction
-	tx := userRepo.DB.Begin()
+	tx := repo.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
 
-	// check transaction error
 	if err := tx.Error; err != nil {
 		return err
 	}
 
-	// get user by id
 	if err := tx.Where("id = ?", userDTO.ID).First(user).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// assign userDTO to user
 	user.Name = userDTO.Name
 	user.Email = userDTO.Email
 	user.ProfileImgURL = userDTO.ProfileImgURL
+	user.PasswordHash = userDTO.Password
 
-	// save user
 	if err := tx.Save(user).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// commit transaction when no error
 	return tx.Commit().Error
 }
 
-func (userRepo *UserRepository) DeleteUser(userID string) error {
+func (repo *UserRepository) DeleteUser(userID string) error {
 
-	// begin transaction
-	tx := userRepo.DB.Begin()
+	tx := repo.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
 
-	// check transaction error
 	if err := tx.Error; err != nil {
 		return err
 	}
 
-	// delete user by id
 	if err := tx.Where("id = ?", userID).Delete(&domain.User{}).Error; err != nil {
 		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
+}
+
+func (repo *UserRepository) GetUserByCredential(userDTO *domain.GetUserDTO, loginDTO domain.LogingDTO) error {
+
+	user := domain.User{}
+
+	if err := repo.db.Where("username = ?", loginDTO.Username).First(&user).Error; err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginDTO.Password)); err != nil {
 		return err
 	}
 

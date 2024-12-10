@@ -15,25 +15,25 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
-func (userService *UserService) GetAllUser(users *[]domain.User) error {
+func (userService *UserService) GetAllUser(allUserDTO *[]domain.GetUserDTO) error {
 
-	if err := userService.userRepo.GetAllUsers(users); err != nil {
+	if err := userService.userRepo.GetAllUsers(allUserDTO); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (userService *UserService) GetUser(user *domain.User, userID string) error {
+func (userService *UserService) GetUser(user *domain.GetUserDTO, userID string) error {
 
-	if err := userService.userRepo.GetUser(user, userID); err != nil {
+	if err := userService.userRepo.GetUserById(user, userID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (userService *UserService) CreateUser(user *domain.User, userDTO *domain.CreateUserDTO) error {
+func (userService *UserService) CreateUser(user *domain.User, userDTO domain.CreateUserDTO) error {
 
 	bytes, err := bcrypt.GenerateFromPassword([]byte(userDTO.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -51,7 +51,14 @@ func (userService *UserService) CreateUser(user *domain.User, userDTO *domain.Cr
 
 func (userService *UserService) UpdateUser(user *domain.User, userDTO *domain.UpdateUserDTO) error {
 
-	err := userService.userRepo.UpdateUser(user, userDTO)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(userDTO.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	userDTO.Password = string(bytes)
+
+	err = userService.userRepo.UpdateUser(user, userDTO)
 	if err != nil {
 		return err
 	}

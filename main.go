@@ -3,9 +3,11 @@ package main
 import (
 	"golang-todo-api-tdd-ddd/core"
 	"log"
+	"time"
 
-	echojwt "github.com/labstack/echo-jwt/v4"
+	// echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -14,9 +16,16 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(echojwt.WithConfig(echojwt.Config{
-		SigningKey: []byte("golang-todo-api-tdd-ddd"),
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+		Timeout:      10 * time.Second,
+		Skipper:      middleware.DefaultSkipper,
+		ErrorMessage: "time out(5s)",
 	}))
+	// e.Use(echojwt.WithConfig(echojwt.Config{
+	// 	SigningKey: []byte("golang-todo-api-tdd-ddd"),
+	// }))
 
 	db, err := core.ConnectPostgresDB()
 	if err != nil {
@@ -29,5 +38,4 @@ func main() {
 
 		log.Fatal(err)
 	}
-
 }

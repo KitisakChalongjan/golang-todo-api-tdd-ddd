@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
@@ -11,98 +12,93 @@ import (
 )
 
 func InitializeUserHandler(e *echo.Echo, db *gorm.DB) {
+
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
+	userHandler := NewUserHandler(userService)
 
 	userGroup := e.Group("/user")
 
-	userGroup.GET("/all", func(c echo.Context) error {
-		return GetAllUser(c, userService)
-	})
-	userGroup.GET("/:userID", func(c echo.Context) error {
-		return GetUserByID(c, userService)
-	})
-	userGroup.POST("/", func(c echo.Context) error {
-		return CreateUser(c, userService)
-	})
-	userGroup.PUT("/", func(c echo.Context) error {
-		return UpdateUser(c, userService)
-	})
-	userGroup.DELETE("/:userID", func(c echo.Context) error {
-		return DeleteUser(c, userService)
-	})
+	userGroup.GET("/all", userHandler.GetAllUser)
+	userGroup.GET("/:userID", userHandler.GetUserByID)
+	userGroup.POST("/", userHandler.CreateUser)
+	userGroup.PUT("/", userHandler.UpdateUser)
+	userGroup.DELETE("/:userID", userHandler.DeleteUser)
 }
 
-func GetAllUser(c echo.Context, userService *service.UserService) error {
+type UserHandler struct {
+	userService *service.UserService
+}
 
-	users := []domain.User{}
+func NewUserHandler(userService *service.UserService) *UserHandler {
+	return &UserHandler{userService: userService}
+}
 
-	err := userService.GetAllUser(&users)
+func (handler *UserHandler) GetAllUser(c echo.Context) error {
+
+	allUserDTO := []domain.GetUserDTO{}
+
+	err := handler.userService.GetAllUser(&allUserDTO)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all user. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, users)
+	return c.JSON(http.StatusOK, allUserDTO)
 }
 
-func GetUserByID(c echo.Context, userService *service.UserService) error {
+func (handler *UserHandler) GetUserByID(c echo.Context) error {
 
-	user := domain.User{}
+	user := domain.GetUserDTO{}
 
 	userID := c.Param("userID")
 
-	err := userService.GetUser(&user, userID)
+	err := handler.userService.GetUser(&user, userID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get user. error: %s.", err))
 	}
 
 	return c.JSON(http.StatusOK, user)
 }
 
-func CreateUser(c echo.Context, userService *service.UserService) error {
+func (handler *UserHandler) CreateUser(c echo.Context) error {
 
 	user := domain.User{}
 	userDTO := domain.CreateUserDTO{}
 
-	err := c.Bind(&userDTO)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "invalid request.")
+	if err := c.Bind(&userDTO); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
 	}
 
-	err = userService.CreateUser(&user, &userDTO)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "fail to create user.")
+	if err := handler.userService.CreateUser(&user, userDTO); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to create user. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, user)
+	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' created", user.ID))
 }
 
-func UpdateUser(c echo.Context, userService *service.UserService) error {
+func (handler *UserHandler) UpdateUser(c echo.Context) error {
 
 	user := domain.User{}
 	userDTO := domain.UpdateUserDTO{}
 
-	err := c.Bind(&userDTO)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "invalid request :"+err.Error())
+	if err := c.Bind(&userDTO); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
 	}
 
-	err = userService.UpdateUser(&user, &userDTO)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "fail to update user : "+err.Error())
+	if err := handler.userService.UpdateUser(&user, &userDTO); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to update user. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, user)
+	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' updated", user.ID))
 }
 
-func DeleteUser(c echo.Context, userService *service.UserService) error {
+func (handler *UserHandler) DeleteUser(c echo.Context) error {
 
 	userID := c.Param("userID")
 
-	err := userService.DeleteUser(userID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "fail to delete user.")
+	if err := handler.userService.DeleteUser(userID); err != nil {
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("fail to delete user. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, "delete user successful.")
+	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' deleted", userID))
 }

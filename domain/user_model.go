@@ -2,6 +2,7 @@ package domain
 
 import (
 	"time"
+
 )
 
 type User struct {
@@ -14,6 +15,15 @@ type User struct {
 	CreatedAt     time.Time  `json:"created_at" column:"created_at" gorm:"autoCreateTime:milli;not null"`
 	UpdatedAt     time.Time  `json:"updated_at" column:"updated_at" gorm:"autoUpdateTime:milli;not null"`
 	DeletedAt     *time.Time `json:"deleted_at" column:"deleted_at" gorm:""`
+}
+
+type GetUserDTO struct {
+	ID            string    `json:"id"`
+	Name          string    `json:"name"`
+	Email         string    `json:"email"`
+	ProfileImgURL *string   `json:"profile_img_url"`
+	Username      string    `json:"username"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type CreateUserDTO struct {
@@ -29,4 +39,5 @@ type UpdateUserDTO struct {
 	Name          string  `json:"name"`
 	Email         string  `json:"email"`
 	ProfileImgURL *string `json:"profile_img_url"`
+	Password      string  `json:"password"`
 }

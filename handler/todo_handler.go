@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
@@ -13,113 +14,102 @@ import (
 func InitializeTodoHandler(e *echo.Echo, db *gorm.DB) {
 	todoRepo := repository.NewTodoRepository(db)
 	todoService := service.NewTodoService(todoRepo)
+	todoHandler := NewTodoHandler(todoService)
 
 	todoGroup := e.Group("/todo")
 
-	todoGroup.GET("/all", func(c echo.Context) error {
-		return GetAllTodo(c, todoService)
-	})
-	todoGroup.GET("/:todoID", func(c echo.Context) error {
-		return GetTodoByID(c, todoService)
-	})
-	todoGroup.GET("/user/:userID", func(c echo.Context) error {
-		return GetTodosByUserID(c, todoService)
-	})
-	todoGroup.POST("/", func(c echo.Context) error {
-		return CreateTodo(c, todoService)
-	})
-	todoGroup.PUT("/", func(c echo.Context) error {
-		return UpdateTodo(c, todoService)
-	})
-	todoGroup.DELETE("/:todoID", func(c echo.Context) error {
-		return DeleteTodo(c, todoService)
-	})
+	todoGroup.GET("/all", todoHandler.GetAllTodo)
+	todoGroup.GET("/:todoID", todoHandler.GetTodoByID)
+	todoGroup.GET("/user/:userID", todoHandler.GetTodosByUserID)
+	todoGroup.POST("/", todoHandler.CreateTodo)
+	todoGroup.PUT("/", todoHandler.UpdateTodo)
+	todoGroup.DELETE("/:todoID", todoHandler.DeleteTodo)
 }
 
-func GetAllTodo(c echo.Context, todoService *service.TodoService) error {
+type TodoHandler struct {
+	todoService *service.TodoService
+}
 
-	todos := []domain.Todo{}
+func NewTodoHandler(todoService *service.TodoService) *TodoHandler {
+	return &TodoHandler{todoService: todoService}
+}
 
-	err := todoService.GetAllTodo(&todos)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+func (handler *TodoHandler) GetAllTodo(c echo.Context) error {
+
+	allTodoDTO := []domain.GetTodoDTO{}
+
+	if err := handler.todoService.GetAllTodo(&allTodoDTO); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all todo. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, todos)
+	return c.JSON(http.StatusOK, allTodoDTO)
 }
 
-func GetTodoByID(c echo.Context, todoService *service.TodoService) error {
+func (handler *TodoHandler) GetTodoByID(c echo.Context) error {
 
-	todo := domain.Todo{}
+	todoDTO := domain.GetTodoDTO{}
 
 	todoID := c.Param("todoID")
 
-	err := todoService.GetTodoByID(&todo, todoID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+	if err := handler.todoService.GetTodoByID(&todoDTO, todoID); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get todo. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, todo)
+	return c.JSON(http.StatusOK, todoDTO)
 }
 
-func GetTodosByUserID(c echo.Context, todoService *service.TodoService) error {
+func (handler *TodoHandler) GetTodosByUserID(c echo.Context) error {
 
-	todos := []domain.Todo{}
+	allTodoDTO := []domain.GetTodoDTO{}
 
 	userID := c.Param("userID")
 
-	err := todoService.GetTodosByUserID(&todos, userID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+	if err := handler.todoService.GetTodosByUserID(&allTodoDTO, userID); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all todo by userID. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, todos)
+	return c.JSON(http.StatusOK, allTodoDTO)
 }
 
-func CreateTodo(c echo.Context, todoService *service.TodoService) error {
+func (handler *TodoHandler) CreateTodo(c echo.Context) error {
 
 	todo := domain.Todo{}
 	todoDTO := domain.CreateTodoDTO{}
 
-	err := c.Bind(&todoDTO)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "invalid request.")
+	if err := c.Bind(&todoDTO); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
 	}
 
-	err = todoService.CreateTodo(&todo, todoDTO)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "fail to create user.")
+	if err := handler.todoService.CreateTodo(&todo, todoDTO); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to create todo. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, todo)
+	return c.JSON(http.StatusOK, fmt.Sprintf("todo '%s' created", todo.ID))
 }
 
-func UpdateTodo(c echo.Context, todoService *service.TodoService) error {
+func (handler *TodoHandler) UpdateTodo(c echo.Context) error {
 
 	todo := domain.Todo{}
 	todoDTO := domain.UpdateTodoDTO{}
 
-	err := c.Bind(&todoDTO)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "invalid request :"+err.Error())
+	if err := c.Bind(&todoDTO); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
 	}
 
-	err = todoService.UpdateTodo(&todo, todoDTO)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "fail to update todo : "+err.Error())
+	if err := handler.todoService.UpdateTodo(&todo, todoDTO); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to create todo. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, todo)
+	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' updated", todo.ID))
 }
 
-func DeleteTodo(c echo.Context, todoService *service.TodoService) error {
+func (handler *TodoHandler) DeleteTodo(c echo.Context) error {
 
 	todoID := c.Param("todoID")
 
-	err := todoService.DeleteTodo(todoID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "fail to delete todo.")
+	if err := handler.todoService.DeleteTodo(todoID); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to deleted todo. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, "delete todo successful.")
+	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' deleted", todoID))
 }
