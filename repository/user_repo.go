@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"golang-todo-api-tdd-ddd/domain"
 
 	"github.com/google/uuid"
@@ -154,12 +155,19 @@ func (repo *UserRepository) GetUserByCredential(userDTO *domain.GetUserDTO, logi
 	user := domain.User{}
 
 	if err := repo.db.Where("username = ?", loginDTO.Username).First(&user).Error; err != nil {
-		return err
+		return errors.New("user not found")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginDTO.Password)); err != nil {
-		return err
+		return errors.New("incorrect password")
 	}
+
+	userDTO.ID = user.ID
+	userDTO.Name = user.Name
+	userDTO.Email = user.Email
+	userDTO.Username = user.Username
+	userDTO.ProfileImgURL = user.ProfileImgURL
+	userDTO.CreatedAt = user.CreatedAt
 
 	return nil
 }

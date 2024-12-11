@@ -7,16 +7,19 @@ import (
 	"golang-todo-api-tdd-ddd/service"
 	"net/http"
 
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
-func InitializeTodoHandler(e *echo.Echo, db *gorm.DB) {
+func InitializeTodoHandler(e *echo.Echo, db *gorm.DB, secretKey string) {
 	todoRepo := repository.NewTodoRepository(db)
 	todoService := service.NewTodoService(todoRepo)
 	todoHandler := NewTodoHandler(todoService)
 
 	todoGroup := e.Group("/todo")
+
+	todoGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(secretKey)}))
 
 	todoGroup.GET("/all", todoHandler.GetAllTodo)
 	todoGroup.GET("/:todoID", todoHandler.GetTodoByID)

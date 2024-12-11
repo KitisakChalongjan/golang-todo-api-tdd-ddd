@@ -6,6 +6,7 @@ import (
 	"time"
 
 	// echojwt "github.com/labstack/echo-jwt/v4"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -13,6 +14,10 @@ import (
 func main() {
 
 	log.Println("initializing the application...")
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("error loading .env file")
+	}
 
 	e := echo.New()
 
@@ -23,16 +28,15 @@ func main() {
 		Skipper:      middleware.DefaultSkipper,
 		ErrorMessage: "time out(5s)",
 	}))
-	// e.Use(echojwt.WithConfig(echojwt.Config{
-	// 	SigningKey: []byte("golang-todo-api-tdd-ddd"),
-	// }))
 
 	db, err := core.ConnectPostgresDB()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	core.InitializeHandler(e, db)
+	if err := core.InitializeHandler(e, db); err != nil {
+		log.Fatal(err)
+	}
 
 	if err = e.Start(":1323"); err != nil {
 

@@ -7,17 +7,20 @@ import (
 	"golang-todo-api-tdd-ddd/service"
 	"net/http"
 
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
-func InitializeUserHandler(e *echo.Echo, db *gorm.DB) {
+func InitializeUserHandler(e *echo.Echo, db *gorm.DB, secretKey string) {
 
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userHandler := NewUserHandler(userService)
 
 	userGroup := e.Group("/user")
+
+	userGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(secretKey)}))
 
 	userGroup.GET("/all", userHandler.GetAllUser)
 	userGroup.GET("/:userID", userHandler.GetUserByID)

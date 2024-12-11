@@ -31,7 +31,7 @@ func NewAuthenHandler(authenService *service.AuthenService) *AuthenHandler {
 
 func (handler *AuthenHandler) Login(c echo.Context) error {
 
-	userDTO := domain.GetUserDTO{}
+	var tokenString string
 	loginDTO := domain.LogingDTO{}
 
 	err := c.Bind(&loginDTO)
@@ -39,10 +39,10 @@ func (handler *AuthenHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
 	}
 
-	err = handler.authenService.Login(&userDTO, loginDTO)
+	err = handler.authenService.Login(&tokenString, loginDTO)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to login. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"jwt": "jwt"})
+	return c.JSON(http.StatusOK, map[string]string{"jwt": tokenString})
 }
