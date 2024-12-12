@@ -6,6 +6,7 @@ import (
 
 type Todo struct {
 	ID          string     `json:"id" column:"id" gorm:"primaryKey"`
+	UserID      string     `json:"user_id" column:"user_id" gorm:"not null"`
 	Title       string     `json:"title" column:"title" gorm:"not null"`
 	Description string     `json:"description" column:"description" gorm:"not null"`
 	IsCompleted bool       `json:"is_completed" column:"is_completed" gorm:"not null"`
@@ -14,7 +15,6 @@ type Todo struct {
 	CreatedAt   time.Time  `json:"created_at" column:"created_at" gorm:"autoCreateTime:milli;not null"`
 	UpdatedAt   time.Time  `json:"updated_at" column:"updated_at" gorm:"autoUpdateTime:milli;not null"`
 	DeletedAt   *time.Time `json:"deleted_at" column:"deleted_at" gorm:""`
-	UserID      string     `json:"user_id" column:"user_id" gorm:"not null"`
 	User        User       `gorm:"constraint:OnDelete:CASCADE;"`
 }
 

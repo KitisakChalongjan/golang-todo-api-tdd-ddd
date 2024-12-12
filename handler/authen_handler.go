@@ -13,7 +13,8 @@ import (
 
 func InitializeAuthenHandler(e *echo.Echo, db *gorm.DB) {
 	userRepo := repository.NewUserRepository(db)
-	authenService := service.NewAuthenService(userRepo)
+	authenRepo := repository.NewAuthenRepository(db)
+	authenService := service.NewAuthenService(userRepo, authenRepo)
 	authenHandler := NewAuthenHandler(authenService)
 
 	authenGroup := e.Group("/authen")
@@ -32,14 +33,17 @@ func NewAuthenHandler(authenService *service.AuthenService) *AuthenHandler {
 func (handler *AuthenHandler) Login(c echo.Context) error {
 
 	var tokenString string
-	loginDTO := domain.LogingDTO{}
+	var refreshToken string
+	loginDTO := domain.LoginDTO{}
 
 	err := c.Bind(&loginDTO)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
 	}
 
-	err = handler.authenService.Login(&tokenString, loginDTO)
+	c.Request().Header.Get("User-Agent")
+
+	err = handler.authenService.Login(&tokenString, &refreshToken, loginDTO, c)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to login. error: %s.", err))
 	}

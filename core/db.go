@@ -21,7 +21,7 @@ func ConnectPostgresDB() (*gorm.DB, error) {
 
 	log.Println("database connected.")
 
-	err = db.AutoMigrate(&domain.Todo{}, &domain.User{})
+	err = db.AutoMigrate(&domain.Todo{}, &domain.User{}, &domain.RefreshToken{})
 	if err != nil {
 		return nil, err
 	}

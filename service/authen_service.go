@@ -9,21 +9,23 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/labstack/echo/v4"
 )
 
 type AuthenService struct {
-	userRepo *repository.UserRepository
+	userRepo   *repository.UserRepository
+	authenRepo *repository.AuthenRepository
 }
 
-func NewAuthenService(userRepo *repository.UserRepository) *AuthenService {
-	return &AuthenService{userRepo: userRepo}
+func NewAuthenService(userRepo *repository.UserRepository, authenRepo *repository.AuthenRepository) *AuthenService {
+	return &AuthenService{userRepo: userRepo, authenRepo: authenRepo}
 }
 
-func (handler *AuthenService) Login(tokenString *string, logingDTO domain.LogingDTO) error {
+func (handler *AuthenService) Login(accessToken *string, refreshToken *string, loginDTO domain.LoginDTO, c echo.Context) error {
 
 	userDTO := domain.GetUserDTO{}
 
-	if err := handler.userRepo.GetUserByCredential(&userDTO, logingDTO); err != nil {
+	if err := handler.authenRepo.GetUserByCredential(&userDTO, loginDTO); err != nil {
 		return err
 	}
 
@@ -32,19 +34,45 @@ func (handler *AuthenService) Login(tokenString *string, logingDTO domain.Loging
 		return errors.New("JWT_SECRET environment variable not set")
 	}
 
-	claims := jwt.MapClaims{
-		"user_id": userDTO.ID,
-		"exp":     jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
+	jwtClaims := jwt.RegisteredClaims{
+		Subject:   userDTO.ID,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	accessJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims)
 
-	signedString, err := token.SignedString([]byte(secretKey))
+	signedAccessJWT, err := accessJWT.SignedString([]byte(secretKey))
 	if err != nil {
-		return fmt.Errorf("cannot creating jwt token. error : %s", err)
+		return fmt.Errorf("cannot creating access jwt. error : %s", err)
 	}
 
-	*tokenString = signedString
+	*accessToken = signedAccessJWT
+
+	refreshClaims := jwt.RegisteredClaims{
+		Subject:   userDTO.ID,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
+	}
+
+	refreshJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+
+	signedRefreshJWT, err := refreshJWT.SignedString([]byte(secretKey))
+	if err != nil {
+		return fmt.Errorf("cannot creating refresh jwt. error : %s", err)
+	}
+
+	*refreshToken = signedRefreshJWT
+
+	// updateRefreshTokenDTO := domain.UpdateRefreshTokenDTO{
+	// 	UserID:       userDTO.ID,
+	// 	RefreshToken: *refreshToken,
+	// 	IsRevoked:    false,
+	// 	DeviceInfo:   "",
+	// 	IpAddress:    "",
+	// }
+
+	handler.authenRepo.UpdateRefreshToken(userDTO.ID, *refreshToken)
 
 	return nil
 }

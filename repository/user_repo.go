@@ -1,11 +1,9 @@
 package repository
 
 import (
-	"errors"
 	"golang-todo-api-tdd-ddd/domain"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -15,7 +13,6 @@ type IUserRepository interface {
 	CreateUser(user *domain.User) error
 	UpdateUser(userID string, userDTO domain.UpdateUserDTO) error
 	DeleteUser(userID string) error
-	GetUserByCredential(loginDTO domain.LogingDTO) error
 }
 
 type UserRepository struct {
@@ -148,26 +145,4 @@ func (repo *UserRepository) DeleteUser(userID string) error {
 	}
 
 	return tx.Commit().Error
-}
-
-func (repo *UserRepository) GetUserByCredential(userDTO *domain.GetUserDTO, loginDTO domain.LogingDTO) error {
-
-	user := domain.User{}
-
-	if err := repo.db.Where("username = ?", loginDTO.Username).First(&user).Error; err != nil {
-		return errors.New("user not found")
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginDTO.Password)); err != nil {
-		return errors.New("incorrect password")
-	}
-
-	userDTO.ID = user.ID
-	userDTO.Name = user.Name
-	userDTO.Email = user.Email
-	userDTO.Username = user.Username
-	userDTO.ProfileImgURL = user.ProfileImgURL
-	userDTO.CreatedAt = user.CreatedAt
-
-	return nil
 }
