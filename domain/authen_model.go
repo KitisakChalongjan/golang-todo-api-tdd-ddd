@@ -4,6 +4,21 @@ import (
 	"time"
 )
 
+type RefreshToken struct {
+	ID           string    `json:"id" column:"id" gorm:"primaryKey"`
+	UserID       string    `json:"user_id" column:"user_id" gorm:"not null"`
+	RefreshToken string    `json:"refresh_token" column:"refresh_token" gorm:"not null"`
+	IsRevoked    bool      `json:"is_revoked" column:"is_revoked" gorm:"not null"`
+	DeviceInfo   string    `json:"device_info" column:"device_info" gorm:"not null"`
+	IpAddress    string    `json:"ip_address" column:"ip_address" gorm:""`
+	CreatedAt    time.Time `json:"created_at" column:"created_at" gorm:"autoCreateTime:milli;not null"`
+	IssuedAt     time.Time `json:"issued_at" column:"issued_at" gorm:"not null"`
+	ExpiresAt    time.Time `json:"expires_at" column:"expires_at" gorm:"not null"`
+	User         User      `gorm:"constraint:OnDelete:CASCADE;"`
+}
+
+// -------------------------------- DTO --------------------------------
+
 type SignUpUserDTO struct {
 	Name          string  `json:"name"`
 	Email         string  `json:"email"`
@@ -22,19 +37,6 @@ type LoginDTO struct {
 
 type LogoutDTO struct {
 	UserID string `json:"user_id"`
-}
-
-type RefreshToken struct {
-	ID           string    `json:"id" column:"id" gorm:"primaryKey"`
-	UserID       string    `json:"user_id" column:"user_id" gorm:"not null"`
-	RefreshToken string    `json:"refresh_token" column:"refresh_token" gorm:"not null"`
-	IsRevoked    bool      `json:"is_revoked" column:"is_revoked" gorm:"not null"`
-	DeviceInfo   string    `json:"device_info" column:"device_info" gorm:"not null"`
-	IpAddress    string    `json:"ip_address" column:"ip_address" gorm:""`
-	CreatedAt    time.Time `json:"created_at" column:"created_at" gorm:"autoCreateTime:milli;not null"`
-	IssuedAt     time.Time `json:"issued_at" column:"issued_at" gorm:"not null"`
-	ExpiresAt    time.Time `json:"expires_at" column:"expires_at" gorm:"not null"`
-	User         User      `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 type UpdateRefreshTokenDTO struct {
