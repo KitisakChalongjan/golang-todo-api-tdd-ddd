@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthenService struct {
@@ -21,11 +21,27 @@ func NewAuthenService(userRepo *repository.UserRepository, authenRepo *repositor
 	return &AuthenService{userRepo: userRepo, authenRepo: authenRepo}
 }
 
-func (handler *AuthenService) Login(accessToken *string, refreshToken *string, loginDTO domain.LoginDTO, c echo.Context) error {
+func (service *AuthenService) SignUpUser(user *domain.User, userDTO domain.SignUpUserDTO) error {
+
+	bytes, err := bcrypt.GenerateFromPassword([]byte(userDTO.Password), 14)
+	if err != nil {
+		return err
+	}
+
+	userDTO.Password = string(bytes)
+
+	if err := service.authenRepo.CreateUser(user, userDTO); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *AuthenService) Login(accessToken *string, refreshToken *string, loginDTO domain.LoginDTO) error {
 
 	userDTO := domain.GetUserDTO{}
 
-	if err := handler.authenRepo.GetUserByCredential(&userDTO, loginDTO); err != nil {
+	if err := service.authenRepo.GetUserByCredential(&userDTO, loginDTO); err != nil {
 		return err
 	}
 
@@ -49,10 +65,13 @@ func (handler *AuthenService) Login(accessToken *string, refreshToken *string, l
 
 	*accessToken = signedAccessJWT
 
+	issuedAt := jwt.NewNumericDate(time.Now())
+	expiresAt := jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30))
+
 	refreshClaims := jwt.RegisteredClaims{
 		Subject:   userDTO.ID,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
+		IssuedAt:  issuedAt,
+		ExpiresAt: expiresAt,
 	}
 
 	refreshJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
@@ -64,15 +83,51 @@ func (handler *AuthenService) Login(accessToken *string, refreshToken *string, l
 
 	*refreshToken = signedRefreshJWT
 
-	// updateRefreshTokenDTO := domain.UpdateRefreshTokenDTO{
-	// 	UserID:       userDTO.ID,
-	// 	RefreshToken: *refreshToken,
-	// 	IsRevoked:    false,
-	// 	DeviceInfo:   "",
-	// 	IpAddress:    "",
-	// }
+	updateRefreshTokenDTO := domain.UpdateRefreshTokenDTO{
+		UserID:       userDTO.ID,
+		RefreshToken: *refreshToken,
+		IsRevoked:    false,
+		DeviceInfo:   loginDTO.DeviceInfo,
+		IpAddress:    loginDTO.IpAddress,
+		IssuedAt:     issuedAt.Time,
+		ExpiresAt:    expiresAt.Time,
+	}
 
-	handler.authenRepo.UpdateRefreshToken(userDTO.ID, *refreshToken)
+	if err := service.authenRepo.UpdateRefreshToken(updateRefreshTokenDTO); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *AuthenService) Logout(accessToken *jwt.Token) error {
+
+	var getUserDTO domain.GetUserDTO
+
+	userID, err := accessToken.Claims.GetSubject()
+	if err != nil {
+		return fmt.Errorf("cannot get userID from jwt. error : %s", err)
+	}
+
+	if err := service.userRepo.GetUserById(&getUserDTO, userID); err != nil {
+		return err
+	}
+
+	issuedAt := jwt.NewNumericDate(time.Now())
+
+	updateRefreshTokenDTO := domain.UpdateRefreshTokenDTO{
+		UserID:       getUserDTO.ID,
+		RefreshToken: "",
+		IsRevoked:    true,
+		DeviceInfo:   "",
+		IpAddress:    "",
+		IssuedAt:     issuedAt.Time,
+		ExpiresAt:    issuedAt.Time,
+	}
+
+	if err := service.authenRepo.UpdateRefreshToken(updateRefreshTokenDTO); err != nil {
+		return err
+	}
 
 	return nil
 }

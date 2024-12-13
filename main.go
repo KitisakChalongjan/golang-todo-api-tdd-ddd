@@ -2,21 +2,31 @@ package main
 
 import (
 	"golang-todo-api-tdd-ddd/core"
+	"golang-todo-api-tdd-ddd/helper"
 	"log"
+	"os"
 	"time"
 
-	// echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
-
 	log.Println("initializing the application...")
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("error loading .env file")
+	}
+
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		log.Fatal("JWT_SECRET environment variable not set")
+	}
+
+	db, err := core.ConnectPostgresDB()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	e := echo.New()
@@ -29,12 +39,13 @@ func main() {
 		ErrorMessage: "time out(5s)",
 	}))
 
-	db, err := core.ConnectPostgresDB()
-	if err != nil {
-		log.Fatal(err)
+	coreEngine := helper.Engine{
+		Echo:      e,
+		DB:        db,
+		SecretKey: secretKey,
 	}
 
-	if err := core.InitializeHandler(e, db); err != nil {
+	if err := core.InitializeHandler(coreEngine); err != nil {
 		log.Fatal(err)
 	}
 

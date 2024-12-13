@@ -3,23 +3,23 @@ package handler
 import (
 	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
+	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
 	"net/http"
 
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
-func InitializeTodoHandler(e *echo.Echo, db *gorm.DB, secretKey string) {
-	todoRepo := repository.NewTodoRepository(db)
+func InitializeTodoHandler(engine helper.Engine) {
+	todoRepo := repository.NewTodoRepository(engine.DB)
 	todoService := service.NewTodoService(todoRepo)
 	todoHandler := NewTodoHandler(todoService)
 
-	todoGroup := e.Group("/todo")
+	todoGroup := engine.Echo.Group("/todo")
 
-	todoGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(secretKey)}))
+	todoGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
 
 	todoGroup.GET("/all", todoHandler.GetAllTodo)
 	todoGroup.GET("/:todoID", todoHandler.GetTodoByID)

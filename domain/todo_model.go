@@ -18,6 +18,8 @@ type Todo struct {
 	User        User       `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
+// -------------------------------- DTO --------------------------------
+
 type GetTodoDTO struct {
 	ID          string     `json:"id"`
 	Title       string     `json:"title"`

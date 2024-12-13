@@ -3,28 +3,27 @@ package handler
 import (
 	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
+	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
 	"net/http"
 
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
-func InitializeUserHandler(e *echo.Echo, db *gorm.DB, secretKey string) {
+func InitializeUserHandler(engine helper.Engine) {
 
-	userRepo := repository.NewUserRepository(db)
+	userRepo := repository.NewUserRepository(engine.DB)
 	userService := service.NewUserService(userRepo)
 	userHandler := NewUserHandler(userService)
 
-	userGroup := e.Group("/user")
+	userGroup := engine.Echo.Group("/user")
 
-	userGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(secretKey)}))
+	userGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
 
 	userGroup.GET("/all", userHandler.GetAllUser)
 	userGroup.GET("/:userID", userHandler.GetUserByID)
-	userGroup.POST("/", userHandler.CreateUser)
 	userGroup.PUT("/", userHandler.UpdateUser)
 	userGroup.DELETE("/:userID", userHandler.DeleteUser)
 }
@@ -61,22 +60,6 @@ func (handler *UserHandler) GetUserByID(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, user)
-}
-
-func (handler *UserHandler) CreateUser(c echo.Context) error {
-
-	user := domain.User{}
-	userDTO := domain.CreateUserDTO{}
-
-	if err := c.Bind(&userDTO); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
-	}
-
-	if err := handler.userService.CreateUser(&user, userDTO); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to create user. error: %s.", err))
-	}
-
-	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' created", user.ID))
 }
 
 func (handler *UserHandler) UpdateUser(c echo.Context) error {
