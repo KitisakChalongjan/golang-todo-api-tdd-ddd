@@ -24,6 +24,7 @@ func InitializeAuthenHandler(engine helper.Engine) {
 	authenGroup.POST("/signup", authenHandler.SignUpUser)
 	authenGroup.POST("/login", authenHandler.Login)
 	authenGroup.POST("/logout", authenHandler.Logout, echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
+	authenGroup.POST("/re-access-token", authenHandler.ReAccessToken, echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
 }
 
 type AuthenHandler struct {
@@ -89,4 +90,12 @@ func (handler *AuthenHandler) Logout(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, "")
+}
+
+func (handler *AuthenHandler) ReAccessToken(c echo.Context) error {
+
+	// if refresh_token, err := c.Cookie("refresh_token"); err != nil {
+	// 	return c.JSON(http.StatusUnauthorized, "refresh token is not found.")
+	// }
+	return nil
 }

@@ -34,7 +34,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout:      10 * time.Second,
+		Timeout:      5 * time.Second,
 		Skipper:      middleware.DefaultSkipper,
 		ErrorMessage: "time out(5s)",
 	}))
