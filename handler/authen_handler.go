@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"golang-todo-api-tdd-ddd/core"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
@@ -21,10 +22,10 @@ func InitializeAuthenHandler(engine helper.Engine) {
 
 	authenGroup := engine.Echo.Group("/authen")
 
-	authenGroup.POST("/signup", authenHandler.SignUpUser)
-	authenGroup.POST("/login", authenHandler.Login)
+	authenGroup.POST("/signup", authenHandler.SignUp)
+	authenGroup.POST("/signin", authenHandler.SignIn)
 	authenGroup.POST("/logout", authenHandler.Logout, echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
-	authenGroup.POST("/re-access-token", authenHandler.ReAccessToken, echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
+	authenGroup.POST("/re-access-token", authenHandler.ReAccessToken)
 }
 
 type AuthenHandler struct {
@@ -35,67 +36,91 @@ func NewAuthenHandler(authenService *service.AuthenService) *AuthenHandler {
 	return &AuthenHandler{authenService: authenService}
 }
 
-func (handler *AuthenHandler) SignUpUser(c echo.Context) error {
+func (handler *AuthenHandler) SignUp(c echo.Context) error {
 
-	user := domain.User{}
-	userDTO := domain.SignUpUserDTO{}
+	response := core.ApiRespose{}
+	signupDTO := domain.SignUpDTO{}
 
-	if err := c.Bind(&userDTO); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
+	err := c.Bind(&signupDTO)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	if err := handler.authenService.SignUpUser(&user, userDTO); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to create user. error: %s.", err))
+	userID, err := handler.authenService.SignUpUser(signupDTO)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' created", user.ID))
+	response.Data = map[string]string{"message": fmt.Sprintf("create user id %s", userID)}
+
+	return c.JSON(http.StatusOK, response)
 }
 
-func (handler *AuthenHandler) Login(c echo.Context) error {
+func (handler *AuthenHandler) SignIn(c echo.Context) error {
 
-	var accessToken string
-	var refreshToken string
-	loginDTO := domain.LoginDTO{}
+	response := core.ApiRespose{}
+	loginDTO := domain.SignInDTO{}
 
-	if err := c.Bind(&loginDTO); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
-	}
-
-	loginDTO.DeviceInfo = c.Request().Header.Get("User-Agent")
-	loginDTO.IpAddress = c.RealIP()
-
-	err := handler.authenService.Login(&accessToken, &refreshToken, loginDTO)
+	err := c.Bind(&loginDTO)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to login. error: %s.", err))
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	c.SetCookie(&http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false, // Use true if you are using HTTPS
-	})
+	accessTokenString, err := handler.authenService.SignIn(loginDTO)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
+	}
 
-	return c.JSON(http.StatusOK, map[string]string{"access_token": accessToken})
+	response.Data = map[string]string{"access_token": accessTokenString}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (handler *AuthenHandler) Logout(c echo.Context) error {
 
 	accessToken := c.Get("user").(*jwt.Token)
-	fmt.Println(accessToken)
 
 	if err := handler.authenService.Logout(accessToken); err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to logout. error: %s.", err))
 	}
 
-	return c.JSON(http.StatusOK, "")
+	return c.JSON(http.StatusOK, "logout success")
 }
 
 func (handler *AuthenHandler) ReAccessToken(c echo.Context) error {
 
-	// if refresh_token, err := c.Cookie("refresh_token"); err != nil {
-	// 	return c.JSON(http.StatusUnauthorized, "refresh token is not found.")
-	// }
-	return nil
+	var newAccessToken string
+	var newRefreshToken string
+	reAccessDTO := domain.ReAccessDTO{}
+
+	reAccessDTO.DeviceInfo = c.Request().Header.Get("User-Agent")
+	reAccessDTO.IpAddress = c.RealIP()
+
+	refreshTokenCookie, err := c.Cookie("refresh_token")
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, err)
+	}
+
+	err = handler.authenService.ReAccessToken(refreshTokenCookie, &newAccessToken, &newRefreshToken, reAccessDTO)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name:     "refresh_token",
+		Value:    newRefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+	})
+
+	return c.JSON(http.StatusOK, map[string]string{"access_token": newAccessToken})
 }

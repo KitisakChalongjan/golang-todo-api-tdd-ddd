@@ -19,7 +19,7 @@ type RefreshToken struct {
 
 // -------------------------------- DTO --------------------------------
 
-type SignUpUserDTO struct {
+type SignUpDTO struct {
 	Name          string  `json:"name"`
 	Email         string  `json:"email"`
 	Role          string  `json:"role"`
@@ -28,11 +28,11 @@ type SignUpUserDTO struct {
 	Password      string  `json:"password"`
 }
 
-type LoginDTO struct {
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	DeviceInfo string `json:"device_info"`
-	IpAddress  string `json:"ip_address"`
+type SignInDTO struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	// DeviceInfo string `json:"device_info"`
+	// IpAddress  string `json:"ip_address"`
 }
 
 type LogoutDTO struct {
@@ -63,4 +63,9 @@ type AccessTokenClaims struct {
 	UserID    string `json:"user_id"`
 	IssuedAt  string `json:"iat"`
 	ExpiresAt string `json:"exp"`
+}
+
+type ReAccessDTO struct {
+	DeviceInfo string `json:"device_info"`
+	IpAddress  string `json:"ip_address"`
 }

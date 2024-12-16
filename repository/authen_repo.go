@@ -3,7 +3,6 @@ package repository
 import (
 	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
-	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -11,9 +10,9 @@ import (
 )
 
 type IAuthenRepository interface {
-	CreateUser(user *domain.User, userDTO domain.SignUpUserDTO) error
-	GetUserByCredential(loginDTO domain.LoginDTO) error
-	UpdateRefreshToken(updateRefreshTokenDTO domain.UpdateRefreshTokenDTO) error
+	CreateUser(signupDTO domain.SignUpDTO) (domain.User, error)
+	GetUserByCredential(loginDTO domain.SignInDTO) error
+	UpdateRefreshToken(updateRefreshTokenDTO domain.UpdateRefreshTokenDTO) (domain.GetUserDTO, error)
 }
 
 type AuthenRepository struct {
@@ -24,10 +23,9 @@ func NewAuthenRepository(db *gorm.DB) *AuthenRepository {
 	return &AuthenRepository{db: db}
 }
 
-// create user
-func (repo *AuthenRepository) CreateUser(user *domain.User, userDTO domain.SignUpUserDTO) error {
+func (repo *AuthenRepository) CreateUser(signupDTO domain.SignUpDTO) (domain.User, error) {
 
-	var refreshToken domain.RefreshToken
+	user := domain.User{}
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -37,59 +35,51 @@ func (repo *AuthenRepository) CreateUser(user *domain.User, userDTO domain.SignU
 	}()
 
 	if err := tx.Error; err != nil {
-		return err
+		return domain.User{}, err
 	}
 
 	user.ID = uuid.New().String()
-	user.Name = userDTO.Name
-	user.Email = userDTO.Email
-	user.Role = userDTO.Role
-	user.ProfileImgURL = userDTO.ProfileImgURL
-	user.Username = userDTO.Username
-	user.PasswordHash = userDTO.Password
+	user.Name = signupDTO.Name
+	user.Email = signupDTO.Email
+	user.Role = signupDTO.Role
+	user.ProfileImgURL = signupDTO.ProfileImgURL
+	user.Username = signupDTO.Username
+	user.PasswordHash = signupDTO.Password
 
 	if err := tx.Create(&user).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("create user fail. error : %s", err.Error())
+		return domain.User{}, err
 	}
 
-	refreshToken.ID = uuid.New().String()
-	refreshToken.UserID = user.ID
-	refreshToken.RefreshToken = ""
-	refreshToken.IsRevoked = true
-	refreshToken.DeviceInfo = ""
-	refreshToken.IpAddress = ""
-	refreshToken.IssuedAt = time.Now()
-	refreshToken.ExpiresAt = time.Now()
-
-	if err := tx.Save(&refreshToken).Error; err != nil {
-		tx.Rollback()
-		return fmt.Errorf("create refreshToken fail. error : %s", err.Error())
+	err := tx.Commit().Error
+	if err != nil {
+		return domain.User{}, err
 	}
 
-	return tx.Commit().Error
+	return user, nil
 }
 
-func (repo *AuthenRepository) GetUserByCredential(userDTO *domain.GetUserDTO, loginDTO domain.LoginDTO) error {
+func (repo *AuthenRepository) GetUserByCredential(loginDTO domain.SignInDTO) (domain.GetUserDTO, error) {
 
 	user := domain.User{}
+	getUserDTO := domain.GetUserDTO{}
 
 	if err := repo.db.Where("username = ?", loginDTO.Username).First(&user).Error; err != nil {
-		return fmt.Errorf("user not found. error : %s", err.Error())
+		return domain.GetUserDTO{}, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginDTO.Password)); err != nil {
-		return fmt.Errorf("incorrect password. error : %s", err.Error())
+		return domain.GetUserDTO{}, err
 	}
 
-	userDTO.ID = user.ID
-	userDTO.Name = user.Name
-	userDTO.Email = user.Email
-	userDTO.Username = user.Username
-	userDTO.ProfileImgURL = user.ProfileImgURL
-	userDTO.CreatedAt = user.CreatedAt
+	getUserDTO.ID = user.ID
+	getUserDTO.Name = user.Name
+	getUserDTO.Email = user.Email
+	getUserDTO.Username = user.Username
+	getUserDTO.ProfileImgURL = user.ProfileImgURL
+	getUserDTO.CreatedAt = user.CreatedAt
 
-	return nil
+	return getUserDTO, nil
 }
 
 func (repo *AuthenRepository) UpdateRefreshToken(updateRefreshTokenDTO domain.UpdateRefreshTokenDTO) error {

@@ -2,8 +2,10 @@ package main
 
 import (
 	"golang-todo-api-tdd-ddd/core"
+	"golang-todo-api-tdd-ddd/handler"
 	"golang-todo-api-tdd-ddd/helper"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -39,13 +41,13 @@ func main() {
 		ErrorMessage: "time out(5s)",
 	}))
 
-	coreEngine := helper.Engine{
+	engine := helper.Engine{
 		Echo:      e,
 		DB:        db,
 		SecretKey: secretKey,
 	}
 
-	if err := core.InitializeHandler(coreEngine); err != nil {
+	if err := InitializeHandler(engine); err != nil {
 		log.Fatal(err)
 	}
 
@@ -53,4 +55,17 @@ func main() {
 
 		log.Fatal(err)
 	}
+}
+
+func InitializeHandler(engine helper.Engine) error {
+
+	engine.Echo.GET("/", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "online <3"})
+	})
+
+	handler.InitializeAuthenHandler(engine)
+	handler.InitializeTodoHandler(engine)
+	handler.InitializeUserHandler(engine)
+
+	return nil
 }

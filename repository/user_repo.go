@@ -53,7 +53,7 @@ func (repo *UserRepository) GetUserById(userDTO *domain.GetUserDTO, userID strin
 	user := domain.User{}
 
 	if err := repo.db.Where("id = ?", userID).First(&user).Error; err != nil {
-		return fmt.Errorf("no user found. error : %s", err.Error())
+		return err
 	}
 
 	userDTO.ID = user.ID
