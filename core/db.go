@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
 )
 
 func ConnectPostgresDB() (*gorm.DB, error) {
@@ -21,7 +22,7 @@ func ConnectPostgresDB() (*gorm.DB, error) {
 
 	log.Println("database connected.")
 
-	err = db.AutoMigrate(&domain.Todo{}, &domain.User{}, &domain.RefreshToken{})
+	err = db.AutoMigrate(&domain.Todo{}, &domain.User{}, &domain.Role{})
 	if err != nil {
 		return nil, err
 	}

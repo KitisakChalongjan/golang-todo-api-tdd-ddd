@@ -6,6 +6,7 @@ import (
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
+	"golang-todo-api-tdd-ddd/valueobject"
 	"net/http"
 
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -39,7 +40,7 @@ func NewTodoHandler(todoService *service.TodoService) *TodoHandler {
 
 func (handler *TodoHandler) GetAllTodo(c echo.Context) error {
 
-	allTodoDTO := []domain.GetTodoDTO{}
+	allTodoDTO := []valueobject.GetTodoVO{}
 
 	if err := handler.todoService.GetAllTodo(&allTodoDTO); err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all todo. error: %s.", err))
@@ -50,7 +51,7 @@ func (handler *TodoHandler) GetAllTodo(c echo.Context) error {
 
 func (handler *TodoHandler) GetTodoByID(c echo.Context) error {
 
-	todoDTO := domain.GetTodoDTO{}
+	todoDTO := valueobject.GetTodoVO{}
 
 	todoID := c.Param("todoID")
 
@@ -63,7 +64,7 @@ func (handler *TodoHandler) GetTodoByID(c echo.Context) error {
 
 func (handler *TodoHandler) GetTodosByUserID(c echo.Context) error {
 
-	allTodoDTO := []domain.GetTodoDTO{}
+	allTodoDTO := []valueobject.GetTodoVO{}
 
 	userID := c.Param("userID")
 
@@ -77,7 +78,7 @@ func (handler *TodoHandler) GetTodosByUserID(c echo.Context) error {
 func (handler *TodoHandler) CreateTodo(c echo.Context) error {
 
 	todo := domain.Todo{}
-	todoDTO := domain.CreateTodoDTO{}
+	todoDTO := valueobject.CreateTodoVO{}
 
 	if err := c.Bind(&todoDTO); err != nil {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
@@ -93,7 +94,7 @@ func (handler *TodoHandler) CreateTodo(c echo.Context) error {
 func (handler *TodoHandler) UpdateTodo(c echo.Context) error {
 
 	todo := domain.Todo{}
-	todoDTO := domain.UpdateTodoDTO{}
+	todoDTO := valueobject.UpdateTodoVO{}
 
 	if err := c.Bind(&todoDTO); err != nil {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))

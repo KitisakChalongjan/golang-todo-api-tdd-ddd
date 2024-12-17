@@ -2,10 +2,12 @@ package handler
 
 import (
 	"fmt"
+	"golang-todo-api-tdd-ddd/core"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
+	"golang-todo-api-tdd-ddd/valueobject"
 	"net/http"
 
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -38,7 +40,7 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 
 func (handler *UserHandler) GetAllUser(c echo.Context) error {
 
-	allUserDTO := []domain.GetUserDTO{}
+	allUserDTO := []valueobject.GetUserVO{}
 
 	err := handler.userService.GetAllUser(&allUserDTO)
 	if err != nil {
@@ -50,22 +52,27 @@ func (handler *UserHandler) GetAllUser(c echo.Context) error {
 
 func (handler *UserHandler) GetUserByID(c echo.Context) error {
 
-	user := domain.GetUserDTO{}
+	response := core.ApiRespose{}
 
 	userID := c.Param("userID")
 
-	err := handler.userService.GetUser(&user, userID)
+	getUserVO, err := handler.userService.GetUserByID(userID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get user. error: %s.", err))
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, user)
+	response.Error = ""
+	response.Data = getUserVO
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (handler *UserHandler) UpdateUser(c echo.Context) error {
 
 	user := domain.User{}
-	userDTO := domain.UpdateUserDTO{}
+	userDTO := valueobject.UpdateUserVO{}
 
 	if err := c.Bind(&userDTO); err != nil {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))

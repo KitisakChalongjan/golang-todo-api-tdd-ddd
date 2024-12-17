@@ -63,6 +63,7 @@ func InitializeHandler(engine helper.Engine) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "online <3"})
 	})
 
+	handler.InitializeRoleHandler(engine)
 	handler.InitializeAuthenHandler(engine)
 	handler.InitializeTodoHandler(engine)
 	handler.InitializeUserHandler(engine)

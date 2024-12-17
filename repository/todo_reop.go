@@ -2,6 +2,7 @@ package repository
 
 import (
 	"golang-todo-api-tdd-ddd/domain"
+	"golang-todo-api-tdd-ddd/valueobject"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -11,8 +12,8 @@ type ITodoRepository interface {
 	GetAllTodos(todos *[]domain.Todo) error
 	GetTodoByID(todo *domain.Todo, todoID string) error
 	GetTodosByUserID(todos *[]domain.Todo, userID string) *gorm.DB
-	CreateTodo(todo *domain.Todo, todoDTO domain.CreateTodoDTO) error
-	UpdateTodo(todo *domain.Todo, todoDTO domain.UpdateTodoDTO) error
+	CreateTodo(todo *domain.Todo, todoDTO valueobject.CreateTodoVO) error
+	UpdateTodo(todo *domain.Todo, todoDTO valueobject.UpdateTodoVO) error
 	DeleteTodo(todoID string) error
 }
 
@@ -24,7 +25,7 @@ func NewTodoRepository(db *gorm.DB) *TodoRepository {
 	return &TodoRepository{db: db}
 }
 
-func (repo *TodoRepository) GetAllTodos(allTodoDTO *[]domain.GetTodoDTO) error {
+func (repo *TodoRepository) GetAllTodos(allTodoDTO *[]valueobject.GetTodoVO) error {
 
 	allTodo := []domain.Todo{}
 
@@ -32,10 +33,10 @@ func (repo *TodoRepository) GetAllTodos(allTodoDTO *[]domain.GetTodoDTO) error {
 		return err
 	}
 
-	*allTodoDTO = make([]domain.GetTodoDTO, len(allTodo))
+	*allTodoDTO = make([]valueobject.GetTodoVO, len(allTodo))
 
 	for i, todo := range allTodo {
-		(*allTodoDTO)[i] = domain.GetTodoDTO{
+		(*allTodoDTO)[i] = valueobject.GetTodoVO{
 			ID:          todo.ID,
 			Title:       todo.Title,
 			Description: todo.Title,
@@ -49,7 +50,7 @@ func (repo *TodoRepository) GetAllTodos(allTodoDTO *[]domain.GetTodoDTO) error {
 	return nil
 }
 
-func (repo *TodoRepository) GetTodoByID(todoDTO *domain.GetTodoDTO, todoID string) error {
+func (repo *TodoRepository) GetTodoByID(todoDTO *valueobject.GetTodoVO, todoID string) error {
 
 	todo := domain.Todo{}
 
@@ -68,16 +69,16 @@ func (repo *TodoRepository) GetTodoByID(todoDTO *domain.GetTodoDTO, todoID strin
 	return nil
 }
 
-func (repo *TodoRepository) GetTodosByUserID(allTodoDTO *[]domain.GetTodoDTO, userID string) *gorm.DB {
+func (repo *TodoRepository) GetTodosByUserID(allTodoDTO *[]valueobject.GetTodoVO, userID string) *gorm.DB {
 
 	allTodo := []domain.Todo{}
 
 	result := repo.db.Where("user_id = ?", userID).Find(&allTodo)
 
-	*allTodoDTO = make([]domain.GetTodoDTO, len(allTodo))
+	*allTodoDTO = make([]valueobject.GetTodoVO, len(allTodo))
 
 	for i, todo := range allTodo {
-		(*allTodoDTO)[i] = domain.GetTodoDTO{
+		(*allTodoDTO)[i] = valueobject.GetTodoVO{
 			ID:          todo.ID,
 			Title:       todo.Title,
 			Description: todo.Title,
@@ -91,7 +92,7 @@ func (repo *TodoRepository) GetTodosByUserID(allTodoDTO *[]domain.GetTodoDTO, us
 	return result
 }
 
-func (repo *TodoRepository) CreateTodo(todo *domain.Todo, todoDTO domain.CreateTodoDTO) error {
+func (repo *TodoRepository) CreateTodo(todo *domain.Todo, todoDTO valueobject.CreateTodoVO) error {
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -120,7 +121,7 @@ func (repo *TodoRepository) CreateTodo(todo *domain.Todo, todoDTO domain.CreateT
 	return tx.Commit().Error
 }
 
-func (repo *TodoRepository) UpdateTodo(todo *domain.Todo, todoDTO domain.UpdateTodoDTO) error {
+func (repo *TodoRepository) UpdateTodo(todo *domain.Todo, todoDTO valueobject.UpdateTodoVO) error {
 
 	tx := repo.db.Begin()
 	defer func() {

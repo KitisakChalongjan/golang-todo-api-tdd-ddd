@@ -17,32 +17,3 @@ type Todo struct {
 	DeletedAt   *time.Time `json:"deleted_at" column:"deleted_at" gorm:""`
 	User        User       `gorm:"constraint:OnDelete:CASCADE;"`
 }
-
-// -------------------------------- DTO --------------------------------
-
-type GetTodoDTO struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	IsCompleted bool       `json:"is_completed"`
-	Priority    string     `json:"priority"`
-	Due         *time.Time `json:"due"`
-	UserID      string     `json:"user_id"`
-}
-
-type CreateTodoDTO struct {
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Priority    string     `json:"priority"`
-	Due         *time.Time `json:"due"`
-	UserID      string     `json:"user_id"`
-}
-
-type UpdateTodoDTO struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	IsCompleted bool       `json:"is_completed"`
-	Priority    string     `json:"priority"`
-	Due         *time.Time `json:"due"`
-}
