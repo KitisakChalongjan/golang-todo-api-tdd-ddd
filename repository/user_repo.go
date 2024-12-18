@@ -11,7 +11,7 @@ import (
 )
 
 type IUserRepository interface {
-	GetAllUsers(users *[]domain.User) error
+	// GetAllUsers(users *[]domain.User) error
 	GetUserById(userID string) (valueobject.GetUserVO, error)
 	GetUserByCredential(loginDTO valueobject.SignInVO) error
 	CreateUser(signupDTO valueobject.SignUpVO) (domain.User, error)
@@ -28,29 +28,29 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (repo *UserRepository) GetAllUsers(allUserDTO *[]valueobject.GetUserVO) error {
+// func (repo *UserRepository) GetAllUsers(allUserDTO *[]valueobject.GetUserVO) error {
 
-	allUser := []domain.User{}
+// 	allUser := []domain.User{}
 
-	if err := repo.db.Find(&allUser).Error; err != nil {
-		return fmt.Errorf("no users found. error : %s", err.Error())
-	}
+// 	if err := repo.db.Find(&allUser).Error; err != nil {
+// 		return fmt.Errorf("no users found. error : %s", err.Error())
+// 	}
 
-	*allUserDTO = make([]valueobject.GetUserVO, len(allUser))
+// 	*allUserDTO = make([]valueobject.GetUserVO, len(allUser))
 
-	for i, user := range allUser {
-		(*allUserDTO)[i] = valueobject.GetUserVO{
-			ID:            user.ID,
-			Name:          user.Name,
-			Email:         user.Email,
-			ProfileImgURL: user.ProfileImgURL,
-			Username:      user.Username,
-			CreatedAt:     user.CreatedAt,
-		}
-	}
+// 	for i, user := range allUser {
+// 		(*allUserDTO)[i] = valueobject.GetUserVO{
+// 			ID:            user.ID,
+// 			Name:          user.Name,
+// 			Email:         user.Email,
+// 			ProfileImgURL: user.ProfileImgURL,
+// 			Username:      user.Username,
+// 			CreatedAt:     user.CreatedAt,
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (repo *UserRepository) GetUserById(userID string) (valueobject.GetUserVO, error) {
 
@@ -58,39 +58,13 @@ func (repo *UserRepository) GetUserById(userID string) (valueobject.GetUserVO, e
 	userVO := valueobject.GetUserVO{}
 
 	if err := repo.db.Where("id = ?", userID).First(&user).Error; err != nil {
-		return valueobject.GetUserVO{}, err
+		return valueobject.GetUserVO{}, fmt.Errorf("fail to get user by id. error: %w", err)
 	}
 
 	roleNames, err := GetRoleNamesByUserID(repo, user.ID)
 	if err != nil {
 		return valueobject.GetUserVO{}, err
 	}
-
-	// usersRoles := []domain.UsersRoles{}
-
-	// err := repo.db.Where("user_id = ?", user.ID).Find(&usersRoles).Error
-	// if err != nil {
-	// 	return valueobject.GetUserVO{}, err
-	// }
-
-	// roleIDs := []string{}
-
-	// for _, usersRolesElement := range usersRoles {
-	// 	roleIDs = append(roleIDs, usersRolesElement.RoleID)
-	// }
-
-	// roles := []domain.Role{}
-
-	// err = repo.db.Where("id IN (?)", roleIDs).Find(&roles).Error
-	// if err != nil {
-	// 	return valueobject.GetUserVO{}, err
-	// }
-
-	// roleNames := []string{}
-
-	// for _, role := range roles {
-	// 	roleNames = append(roleNames, role.Name)
-	// }
 
 	userVO.ID = user.ID
 	userVO.Name = user.Name
@@ -109,43 +83,17 @@ func (repo *UserRepository) GetUserByCredential(signInVO valueobject.SignInVO) (
 	getUserVO := valueobject.GetUserVO{}
 
 	if err := repo.db.Where("username = ?", signInVO.Username).First(&user).Error; err != nil {
-		return valueobject.GetUserVO{}, err
+		return valueobject.GetUserVO{}, fmt.Errorf("cannot find user from username %s. error:  %w", signInVO.Username, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(signInVO.Password)); err != nil {
-		return valueobject.GetUserVO{}, err
+		return valueobject.GetUserVO{}, fmt.Errorf("invalid password for username '%s'. error: %w", signInVO.Username, err)
 	}
 
 	roleNames, err := GetRoleNamesByUserID(repo, user.ID)
 	if err != nil {
 		return valueobject.GetUserVO{}, err
 	}
-
-	// usersRoles := []domain.UsersRoles{}
-
-	// err := repo.db.Where("user_id = ?", user.ID).Find(&usersRoles).Error
-	// if err != nil {
-	// 	return valueobject.GetUserVO{}, err
-	// }
-
-	// roleIDs := []string{}
-
-	// for _, usersRolesElement := range usersRoles {
-	// 	roleIDs = append(roleIDs, usersRolesElement.RoleID)
-	// }
-
-	// roles := []domain.Role{}
-
-	// err = repo.db.Where("id IN (?)", roleIDs).Find(&roles).Error
-	// if err != nil {
-	// 	return valueobject.GetUserVO{}, err
-	// }
-
-	// roleNames := []string{}
-
-	// for _, role := range roles {
-	// 	roleNames = append(roleNames, role.Name)
-	// }
 
 	getUserVO.ID = user.ID
 	getUserVO.Name = user.Name
@@ -172,9 +120,7 @@ func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.U
 		return domain.User{}, err
 	}
 
-	// create new user
 	newUser := domain.User{}
-
 	newUser.ID = uuid.New().String()
 	newUser.Name = signupDTO.Name
 	newUser.Email = signupDTO.Email
@@ -184,42 +130,31 @@ func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.U
 
 	if err := tx.Create(&newUser).Error; err != nil {
 		tx.Rollback()
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	// get roles id by roles name
 	roles := []domain.Role{}
-
 	err := repo.db.Where("name IN (?)", signupDTO.Roles).Find(&roles).Error
 	if err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("failed to find roles: %w", err)
 	}
 
-	roleIDs := []string{}
-
-	for _, role := range roles {
-		roleIDs = append(roleIDs, role.ID)
-	}
-
-	// create new users roles
-	newUserRoles := []domain.UsersRoles{}
-
-	for _, roleID := range roleIDs {
-		newUserRole := domain.UsersRoles{
+	newUserRoles := make([]domain.UsersRoles, len(roles))
+	for i, role := range roles {
+		newUserRoles[i] = domain.UsersRoles{
 			UserID: newUser.ID,
-			RoleID: roleID,
+			RoleID: role.ID,
 		}
-		newUserRoles = append(newUserRoles, newUserRole)
 	}
 
 	if err := tx.Create(&newUserRoles).Error; err != nil {
 		tx.Rollback()
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("failed to create user roles: %w", err)
 	}
 
 	err = tx.Commit().Error
 	if err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return newUser, nil
@@ -283,26 +218,23 @@ func GetRoleNamesByUserID(repo *UserRepository, userID string) ([]string, error)
 
 	err := repo.db.Where("user_id = ?", userID).Find(&usersRoles).Error
 	if err != nil {
-		return []string{}, err
+		return []string{}, fmt.Errorf("fail to get user roles by userID. error : %w", err)
 	}
 
-	roleIDs := []string{}
-
-	for _, usersRolesElement := range usersRoles {
-		roleIDs = append(roleIDs, usersRolesElement.RoleID)
+	roleIDs := make([]string, len(usersRoles))
+	for i, userRole := range usersRoles {
+		roleIDs[i] = userRole.RoleID
 	}
 
 	roles := []domain.Role{}
-
 	err = repo.db.Where("id IN (?)", roleIDs).Find(&roles).Error
 	if err != nil {
-		return []string{}, err
+		return []string{}, fmt.Errorf("fail to get roles by roleIDs. error : %w", err)
 	}
 
-	roleNames := []string{}
-
-	for _, role := range roles {
-		roleNames = append(roleNames, role.Name)
+	roleNames := make([]string, len(roles))
+	for i, role := range roles {
+		roleNames[i] = role.Name
 	}
 
 	return roleNames, nil

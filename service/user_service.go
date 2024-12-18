@@ -16,14 +16,14 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
-func (service *UserService) GetAllUser(allUserDTO *[]valueobject.GetUserVO) error {
+// func (service *UserService) GetAllUser(allUserDTO *[]valueobject.GetUserVO) error {
 
-	if err := service.userRepo.GetAllUsers(allUserDTO); err != nil {
-		return err
-	}
+// 	if err := service.userRepo.GetAllUsers(allUserDTO); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (service *UserService) GetUserByID(userID string) (valueobject.GetUserVO, error) {
 

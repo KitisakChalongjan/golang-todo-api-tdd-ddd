@@ -24,7 +24,7 @@ func InitializeUserHandler(engine helper.Engine) {
 
 	userGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
 
-	userGroup.GET("/all", userHandler.GetAllUser)
+	// userGroup.GET("/all", userHandler.GetAllUser)
 	userGroup.GET("/:userID", userHandler.GetUserByID)
 	userGroup.PUT("/", userHandler.UpdateUser)
 	userGroup.DELETE("/:userID", userHandler.DeleteUser)
@@ -38,17 +38,17 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-func (handler *UserHandler) GetAllUser(c echo.Context) error {
+// func (handler *UserHandler) GetAllUser(c echo.Context) error {
 
-	allUserDTO := []valueobject.GetUserVO{}
+// 	allUserDTO := []valueobject.GetUserVO{}
 
-	err := handler.userService.GetAllUser(&allUserDTO)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all user. error: %s.", err))
-	}
+// 	err := handler.userService.GetAllUser(&allUserDTO)
+// 	if err != nil {
+// 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all user. error: %s.", err))
+// 	}
 
-	return c.JSON(http.StatusOK, allUserDTO)
-}
+// 	return c.JSON(http.StatusOK, allUserDTO)
+// }
 
 func (handler *UserHandler) GetUserByID(c echo.Context) error {
 
@@ -71,18 +71,26 @@ func (handler *UserHandler) GetUserByID(c echo.Context) error {
 
 func (handler *UserHandler) UpdateUser(c echo.Context) error {
 
+	response := core.ApiRespose{}
 	user := domain.User{}
 	userDTO := valueobject.UpdateUserVO{}
 
 	if err := c.Bind(&userDTO); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
+		response.Error = fmt.Sprintf("invalid request. error: %s.", err)
+		response.Data = nil
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
 	if err := handler.userService.UpdateUser(&user, &userDTO); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to update user. error: %s.", err))
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' updated", user.ID))
+	response.Error = ""
+	response.Data = map[string]string{"message": fmt.Sprintf("user '%s' updated", user.ID)}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (handler *UserHandler) DeleteUser(c echo.Context) error {

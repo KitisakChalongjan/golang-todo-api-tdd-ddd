@@ -25,14 +25,14 @@ func (service *AuthenService) SignUp(signupDTO valueobject.SignUpVO) (string, er
 
 	bytes, err := bcrypt.GenerateFromPassword([]byte(signupDTO.Password), 14)
 	if err != nil {
-		return "", fmt.Errorf("cannot generate password hash: %w", err)
+		return "", fmt.Errorf("fail to generate password hash: %w", err)
 	}
 
 	signupDTO.Password = string(bytes)
 
 	newUser, err := service.userRepo.CreateUser(signupDTO)
 	if err != nil {
-		return "", fmt.Errorf("cannot create user: %w", err)
+		return "", err
 	}
 
 	return newUser.ID, nil
@@ -57,29 +57,27 @@ func (service *AuthenService) SignIn(signInVO valueobject.SignInVO) (string, err
 		"exp":   jwt.NewNumericDate(time.Now().AddDate(0, 1, 0)),
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims)
-
-	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
+	accessTokenString, err := GenerateAccessTokenWithClaims(jwtClaims, secretKey)
 	if err != nil {
-		return "", fmt.Errorf("cannot creating access jwt. error : %s", err)
+		return "", err
 	}
 
 	return accessTokenString, nil
 }
 
-func GenerateJWTWithClaims(claims jwt.RegisteredClaims, secretKey string) (*string, error) {
+func GenerateAccessTokenWithClaims(claims jwt.MapClaims, secretKey string) (string, error) {
 
-	claimsToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := claimsToken.SignedString([]byte(secretKey))
+	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("fail to generate accessToken: %w", err)
 	}
 
-	return &signedToken, nil
+	return accessTokenString, nil
 }
 
-func ClaimsTokenFromJWTString(jwtString string) (*jwt.Token, error) {
+func ClaimsTokenFromAccessTokenString(jwtString string) (*jwt.Token, error) {
 
 	token, err := jwt.ParseWithClaims(
 		jwtString,
