@@ -160,7 +160,9 @@ func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.U
 	return newUser, nil
 }
 
-func (repo *UserRepository) UpdateUser(user *domain.User, userDTO *valueobject.UpdateUserVO) error {
+func (repo *UserRepository) UpdateUser(updateUserDTO *valueobject.UpdateUserVO) (string, error) {
+
+	user := domain.User{}
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -170,25 +172,35 @@ func (repo *UserRepository) UpdateUser(user *domain.User, userDTO *valueobject.U
 	}()
 
 	if err := tx.Error; err != nil {
-		return err
+		return "", err
 	}
 
-	if err := tx.Where("id = ?", userDTO.ID).First(user).Error; err != nil {
+	if err := tx.Where("id = ?", updateUserDTO.ID).First(&user).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("no user found. error : %s", err.Error())
+		return "", fmt.Errorf("no user found: %s", err.Error())
 	}
 
-	user.Name = userDTO.Name
-	user.Email = userDTO.Email
-	user.ProfileImgURL = userDTO.ProfileImgURL
-	user.PasswordHash = userDTO.Password
+	roles := []domain.Role{}
 
-	if err := tx.Save(user).Error; err != nil {
+	err := tx.Where("name IN (?)", updateUserDTO.Roles).Find(&roles).Error
+	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("update user fail. error : %s", err.Error())
+		return "", fmt.Errorf("no roles found: %s", err.Error())
 	}
 
-	return tx.Commit().Error
+	user.Name = updateUserDTO.Name
+	user.Email = updateUserDTO.Email
+	user.Roles = roles
+	user.ProfileImgURL = updateUserDTO.ProfileImgURL
+	user.PasswordHash = updateUserDTO.Password
+
+	err = tx.Save(&user).Error
+	if err != nil {
+		tx.Rollback()
+		return "", fmt.Errorf("update user fail: %s", err.Error())
+	}
+
+	return user.ID, tx.Commit().Error
 }
 
 func (repo *UserRepository) DeleteUser(userID string) error {

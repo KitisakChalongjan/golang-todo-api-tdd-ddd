@@ -3,13 +3,13 @@ package handler
 import (
 	"fmt"
 	"golang-todo-api-tdd-ddd/core"
-	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 )
@@ -56,7 +56,9 @@ func (handler *UserHandler) GetUserByID(c echo.Context) error {
 
 	userID := c.Param("userID")
 
-	getUserVO, err := handler.userService.GetUserByID(userID)
+	accessToken := c.Get("user").(*jwt.Token)
+
+	getUserVO, err := handler.userService.GetUserByID(userID, accessToken)
 	if err != nil {
 		response.Error = err.Error()
 		response.Data = nil
@@ -72,23 +74,25 @@ func (handler *UserHandler) GetUserByID(c echo.Context) error {
 func (handler *UserHandler) UpdateUser(c echo.Context) error {
 
 	response := core.ApiRespose{}
-	user := domain.User{}
-	userDTO := valueobject.UpdateUserVO{}
+	updateUserDTO := valueobject.UpdateUserVO{}
 
-	if err := c.Bind(&userDTO); err != nil {
+	accessToken := c.Get("user").(*jwt.Token)
+
+	if err := c.Bind(&updateUserDTO); err != nil {
 		response.Error = fmt.Sprintf("invalid request. error: %s.", err)
 		response.Data = nil
 		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	if err := handler.userService.UpdateUser(&user, &userDTO); err != nil {
+	userID, err := handler.userService.UpdateUser(&updateUserDTO, accessToken)
+	if err != nil {
 		response.Error = err.Error()
 		response.Data = nil
 		return c.JSON(http.StatusInternalServerError, response)
 	}
 
 	response.Error = ""
-	response.Data = map[string]string{"message": fmt.Sprintf("user '%s' updated", user.ID)}
+	response.Data = map[string]string{"message": fmt.Sprintf("user '%s' updated", userID)}
 
 	return c.JSON(http.StatusOK, response)
 }

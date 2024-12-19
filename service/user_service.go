@@ -1,10 +1,11 @@
 package service
 
 import (
-	"golang-todo-api-tdd-ddd/domain"
+	"fmt"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/valueobject"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,7 +26,16 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 // 	return nil
 // }
 
-func (service *UserService) GetUserByID(userID string) (valueobject.GetUserVO, error) {
+func (service *UserService) GetUserByID(userID string, accessToken *jwt.Token) (valueobject.GetUserVO, error) {
+
+	tokenUserId, err := accessToken.Claims.GetSubject()
+	if err != nil {
+		return valueobject.GetUserVO{}, fmt.Errorf("fail to get userID from access token: %w", err)
+	}
+
+	if tokenUserId != userID {
+		return valueobject.GetUserVO{}, fmt.Errorf("you are not authorized to access this data: token userID and param userID not match")
+	}
 
 	getUserVO, err := service.userRepo.GetUserById(userID)
 	if err != nil {
@@ -35,21 +45,30 @@ func (service *UserService) GetUserByID(userID string) (valueobject.GetUserVO, e
 	return getUserVO, nil
 }
 
-func (service *UserService) UpdateUser(user *domain.User, userDTO *valueobject.UpdateUserVO) error {
+func (service *UserService) UpdateUser(updateUserDTO *valueobject.UpdateUserVO, accessToken *jwt.Token) (string, error) {
 
-	bytes, err := bcrypt.GenerateFromPassword([]byte(userDTO.Password), bcrypt.DefaultCost)
+	tokenUserId, err := accessToken.Claims.GetSubject()
 	if err != nil {
-		return err
+		return "", fmt.Errorf("fail to get userID from access token: %w", err)
 	}
 
-	userDTO.Password = string(bytes)
-
-	err = service.userRepo.UpdateUser(user, userDTO)
-	if err != nil {
-		return err
+	if tokenUserId != updateUserDTO.ID {
+		return "", fmt.Errorf("you are not authorized to access this data: token userID and param userID not match")
 	}
 
-	return nil
+	bytes, err := bcrypt.GenerateFromPassword([]byte(updateUserDTO.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", fmt.Errorf("fail to generate hash from passwrd: %w", err)
+	}
+
+	updateUserDTO.Password = string(bytes)
+
+	userID, err := service.userRepo.UpdateUser(updateUserDTO)
+	if err != nil {
+		return "", err
+	}
+
+	return userID, nil
 }
 
 func (service *UserService) DeleteUser(userID string) error {

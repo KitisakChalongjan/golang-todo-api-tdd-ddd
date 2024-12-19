@@ -15,10 +15,10 @@ type GetUserVO struct {
 }
 
 type UpdateUserVO struct {
-	ID            string  `json:"id"`
-	Name          string  `json:"name"`
-	Email         string  `json:"email"`
-	Role          string  `json:"role"`
-	ProfileImgURL *string `json:"profile_img_url"`
-	Password      string  `json:"password"`
+	ID            string   `json:"id"`
+	Name          string   `json:"name"`
+	Email         string   `json:"email"`
+	Roles         []string `json:"roles"`
+	ProfileImgURL *string  `json:"profile_img_url"`
+	Password      string   `json:"password"`
 }

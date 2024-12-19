@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/valueobject"
 	"os"
@@ -57,7 +58,7 @@ func (service *AuthenService) SignIn(signInVO valueobject.SignInVO) (string, err
 		"exp":   jwt.NewNumericDate(time.Now().AddDate(0, 1, 0)),
 	}
 
-	accessTokenString, err := GenerateAccessTokenWithClaims(jwtClaims, secretKey)
+	accessTokenString, err := helper.GenerateAccessTokenWithClaims(jwtClaims, secretKey)
 	if err != nil {
 		return "", err
 	}
@@ -65,30 +66,30 @@ func (service *AuthenService) SignIn(signInVO valueobject.SignInVO) (string, err
 	return accessTokenString, nil
 }
 
-func GenerateAccessTokenWithClaims(claims jwt.MapClaims, secretKey string) (string, error) {
+// func GenerateAccessTokenWithClaims(claims jwt.MapClaims, secretKey string) (string, error) {
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+// 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", fmt.Errorf("fail to generate accessToken: %w", err)
-	}
+// 	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
+// 	if err != nil {
+// 		return "", fmt.Errorf("fail to generate accessToken: %w", err)
+// 	}
 
-	return accessTokenString, nil
-}
+// 	return accessTokenString, nil
+// }
 
-func ClaimsTokenFromAccessTokenString(jwtString string) (*jwt.Token, error) {
+// func ClaimsTokenFromAccessTokenString(jwtString string) (*jwt.Token, error) {
 
-	token, err := jwt.ParseWithClaims(
-		jwtString,
-		&jwt.RegisteredClaims{},
-		func(token *jwt.Token) (interface{}, error) {
-			return []byte("refreshToken"), nil
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
+// 	token, err := jwt.ParseWithClaims(
+// 		jwtString,
+// 		&jwt.RegisteredClaims{},
+// 		func(token *jwt.Token) (interface{}, error) {
+// 			return []byte("refreshToken"), nil
+// 		},
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return token, nil
-}
+// 	return token, nil
+// }
