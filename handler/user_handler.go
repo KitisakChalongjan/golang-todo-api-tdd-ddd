@@ -24,7 +24,6 @@ func InitializeUserHandler(engine helper.Engine) {
 
 	userGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
 
-	// userGroup.GET("/all", userHandler.GetAllUser)
 	userGroup.GET("/:userID", userHandler.GetUserByID)
 	userGroup.PUT("/", userHandler.UpdateUser)
 	userGroup.DELETE("/:userID", userHandler.DeleteUser)
@@ -38,24 +37,11 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-// func (handler *UserHandler) GetAllUser(c echo.Context) error {
-
-// 	allUserDTO := []valueobject.GetUserVO{}
-
-// 	err := handler.userService.GetAllUser(&allUserDTO)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all user. error: %s.", err))
-// 	}
-
-// 	return c.JSON(http.StatusOK, allUserDTO)
-// }
-
 func (handler *UserHandler) GetUserByID(c echo.Context) error {
 
 	response := core.ApiRespose{}
 
 	userID := c.Param("userID")
-
 	accessToken := c.Get("user").(*jwt.Token)
 
 	getUserVO, err := handler.userService.GetUserByID(userID, accessToken)
@@ -99,11 +85,20 @@ func (handler *UserHandler) UpdateUser(c echo.Context) error {
 
 func (handler *UserHandler) DeleteUser(c echo.Context) error {
 
-	userID := c.Param("userID")
+	response := core.ApiRespose{}
 
-	if err := handler.userService.DeleteUser(userID); err != nil {
-		return c.String(http.StatusInternalServerError, fmt.Sprintf("fail to delete user. error: %s.", err))
+	userID := c.Param("userID")
+	accessToken := c.Get("user").(*jwt.Token)
+
+	userID, err := handler.userService.DeleteUser(userID, accessToken)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' deleted", userID))
+	response.Error = ""
+	response.Data = map[string]string{"message": fmt.Sprintf("user '%s' deleted", userID)}
+
+	return c.JSON(http.StatusOK, response)
 }

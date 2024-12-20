@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"golang-todo-api-tdd-ddd/core"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
@@ -9,6 +10,7 @@ import (
 	"golang-todo-api-tdd-ddd/valueobject"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 )
@@ -22,7 +24,7 @@ func InitializeTodoHandler(engine helper.Engine) {
 
 	todoGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
 
-	todoGroup.GET("/all", todoHandler.GetAllTodo)
+	// todoGroup.GET("/all", todoHandler.GetAllTodo)
 	todoGroup.GET("/:todoID", todoHandler.GetTodoByID)
 	todoGroup.GET("/user/:userID", todoHandler.GetTodosByUserID)
 	todoGroup.POST("/", todoHandler.CreateTodo)
@@ -38,28 +40,35 @@ func NewTodoHandler(todoService *service.TodoService) *TodoHandler {
 	return &TodoHandler{todoService: todoService}
 }
 
-func (handler *TodoHandler) GetAllTodo(c echo.Context) error {
+// func (handler *TodoHandler) GetAllTodo(c echo.Context) error {
 
-	allTodoDTO := []valueobject.GetTodoVO{}
+// 	allTodoDTO := []valueobject.GetTodoVO{}
 
-	if err := handler.todoService.GetAllTodo(&allTodoDTO); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all todo. error: %s.", err))
-	}
+// 	if err := handler.todoService.GetAllTodo(&allTodoDTO); err != nil {
+// 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all todo. error: %s.", err))
+// 	}
 
-	return c.JSON(http.StatusOK, allTodoDTO)
-}
+// 	return c.JSON(http.StatusOK, allTodoDTO)
+// }
 
 func (handler *TodoHandler) GetTodoByID(c echo.Context) error {
 
-	todoDTO := valueobject.GetTodoVO{}
+	response := core.ApiRespose{}
 
 	todoID := c.Param("todoID")
+	accessToken := c.Get("user").(*jwt.Token)
 
-	if err := handler.todoService.GetTodoByID(&todoDTO, todoID); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get todo. error: %s.", err))
+	todoVO, err := handler.todoService.GetTodoByID(todoID, accessToken)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, todoDTO)
+	response.Error = ""
+	response.Data = todoVO
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (handler *TodoHandler) GetTodosByUserID(c echo.Context) error {

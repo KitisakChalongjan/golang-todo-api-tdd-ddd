@@ -11,13 +11,11 @@ import (
 )
 
 type IUserRepository interface {
-	// GetAllUsers(users *[]domain.User) error
 	GetUserById(userID string) (valueobject.GetUserVO, error)
 	GetUserByCredential(loginDTO valueobject.SignInVO) error
 	CreateUser(signupDTO valueobject.SignUpVO) (domain.User, error)
-	SignInUser(user *domain.User) error
 	UpdateUser(userID string, userDTO valueobject.UpdateUserVO) error
-	DeleteUser(userID string) error
+	DeleteUser(userID string) (string, error)
 }
 
 type UserRepository struct {
@@ -28,37 +26,13 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-// func (repo *UserRepository) GetAllUsers(allUserDTO *[]valueobject.GetUserVO) error {
-
-// 	allUser := []domain.User{}
-
-// 	if err := repo.db.Find(&allUser).Error; err != nil {
-// 		return fmt.Errorf("no users found. error : %s", err.Error())
-// 	}
-
-// 	*allUserDTO = make([]valueobject.GetUserVO, len(allUser))
-
-// 	for i, user := range allUser {
-// 		(*allUserDTO)[i] = valueobject.GetUserVO{
-// 			ID:            user.ID,
-// 			Name:          user.Name,
-// 			Email:         user.Email,
-// 			ProfileImgURL: user.ProfileImgURL,
-// 			Username:      user.Username,
-// 			CreatedAt:     user.CreatedAt,
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 func (repo *UserRepository) GetUserById(userID string) (valueobject.GetUserVO, error) {
 
 	user := domain.User{}
 	userVO := valueobject.GetUserVO{}
 
 	if err := repo.db.Where("id = ?", userID).First(&user).Error; err != nil {
-		return valueobject.GetUserVO{}, fmt.Errorf("fail to get user by id. error: %w", err)
+		return valueobject.GetUserVO{}, fmt.Errorf("fail to get user by id.: %w", err)
 	}
 
 	roleNames, err := GetRoleNamesByUserID(repo, user.ID)
@@ -117,7 +91,7 @@ func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.U
 	}()
 
 	if err := tx.Error; err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("transaction fail: %s", err.Error())
 	}
 
 	newUser := domain.User{}
@@ -172,25 +146,44 @@ func (repo *UserRepository) UpdateUser(updateUserDTO *valueobject.UpdateUserVO) 
 	}()
 
 	if err := tx.Error; err != nil {
-		return "", err
+		return "", fmt.Errorf("transaction fail: %s", err.Error())
 	}
 
-	if err := tx.Where("id = ?", updateUserDTO.ID).First(&user).Error; err != nil {
+	err := tx.Where("id = ?", updateUserDTO.ID).First(&user).Error
+	if err != nil {
 		tx.Rollback()
 		return "", fmt.Errorf("no user found: %s", err.Error())
 	}
 
+	err = tx.Where("user_id = ?", updateUserDTO.ID).Delete(&domain.UsersRoles{}).Error
+	if err != nil {
+		tx.Rollback()
+		return "", fmt.Errorf("fail to update user roles: %s", err.Error())
+	}
+
 	roles := []domain.Role{}
 
-	err := tx.Where("name IN (?)", updateUserDTO.Roles).Find(&roles).Error
+	err = tx.Where("name IN (?)", updateUserDTO.Roles).Find(&roles).Error
 	if err != nil {
 		tx.Rollback()
 		return "", fmt.Errorf("no roles found: %s", err.Error())
 	}
 
+	newUserRoles := make([]domain.UsersRoles, len(roles))
+	for i, role := range roles {
+		newUserRoles[i] = domain.UsersRoles{
+			UserID: updateUserDTO.ID,
+			RoleID: role.ID,
+		}
+	}
+
+	if err := tx.Create(&newUserRoles).Error; err != nil {
+		tx.Rollback()
+		return "", fmt.Errorf("failed to create user roles: %w", err)
+	}
+
 	user.Name = updateUserDTO.Name
 	user.Email = updateUserDTO.Email
-	user.Roles = roles
 	user.ProfileImgURL = updateUserDTO.ProfileImgURL
 	user.PasswordHash = updateUserDTO.Password
 
@@ -200,10 +193,15 @@ func (repo *UserRepository) UpdateUser(updateUserDTO *valueobject.UpdateUserVO) 
 		return "", fmt.Errorf("update user fail: %s", err.Error())
 	}
 
-	return user.ID, tx.Commit().Error
+	err = tx.Commit().Error
+	if err != nil {
+		return "", fmt.Errorf("update user commit fail: %s", err.Error())
+	}
+
+	return user.ID, nil
 }
 
-func (repo *UserRepository) DeleteUser(userID string) error {
+func (repo *UserRepository) DeleteUser(userID string) (string, error) {
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -213,15 +211,27 @@ func (repo *UserRepository) DeleteUser(userID string) error {
 	}()
 
 	if err := tx.Error; err != nil {
-		return err
+		return "", fmt.Errorf("transaction fail: %s", err.Error())
 	}
 
-	if err := tx.Where("id = ?", userID).Delete(&domain.User{}).Error; err != nil {
+	err := tx.Where("user_id = ?", userID).Delete(&domain.UsersRoles{}).Error
+	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("delete user fail. error : %s", err.Error())
+		return "", fmt.Errorf("fail to delete user roles: %s", err.Error())
 	}
 
-	return tx.Commit().Error
+	err = tx.Where("id = ?", userID).Delete(&domain.User{}).Error
+	if err != nil {
+		tx.Rollback()
+		return "", fmt.Errorf("delete user fail: %s", err.Error())
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return "", fmt.Errorf("delete user commit fail: %s", err.Error())
+	}
+
+	return userID, nil
 }
 
 func GetRoleNamesByUserID(repo *UserRepository, userID string) ([]string, error) {

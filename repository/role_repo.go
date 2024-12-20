@@ -9,7 +9,6 @@ import (
 
 type IRoleRepository interface {
 	CreateRole(name string) (*domain.Role, error)
-	GetRoleIDsByRoleNames(roleNames []string) (*[]domain.Role, error)
 }
 
 type RoleRepository struct {

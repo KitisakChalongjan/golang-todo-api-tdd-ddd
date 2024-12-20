@@ -1,9 +1,12 @@
 package service
 
 import (
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/valueobject"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type TodoService struct {
@@ -14,23 +17,33 @@ func NewTodoService(todoRepo *repository.TodoRepository) *TodoService {
 	return &TodoService{todoRepo: todoRepo}
 }
 
-func (todoService *TodoService) GetAllTodo(allTodoDTO *[]valueobject.GetTodoVO) error {
+// func (todoService *TodoService) GetAllTodo(allTodoDTO *[]valueobject.GetTodoVO) error {
 
-	err := todoService.todoRepo.GetAllTodos(allTodoDTO)
+// 	err := todoService.todoRepo.GetAllTodos(allTodoDTO)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+func (todoService *TodoService) GetTodoByID(todoID string, accessToken *jwt.Token) (valueobject.GetTodoVO, error) {
+
+	tokenUserId, err := accessToken.Claims.GetSubject()
 	if err != nil {
-		return err
+		return valueobject.GetTodoVO{}, fmt.Errorf("fail to get userID from access token: %w", err)
 	}
 
-	return nil
-}
-
-func (todoService *TodoService) GetTodoByID(todo *valueobject.GetTodoVO, todoID string) error {
-
-	if err := todoService.todoRepo.GetTodoByID(todo, todoID); err != nil {
-		return err
+	todoVO, err := todoService.todoRepo.GetTodoByID(todoID)
+	if err != nil {
+		return valueobject.GetTodoVO{}, err
 	}
 
-	return nil
+	if tokenUserId != todoVO.UserID {
+		return valueobject.GetTodoVO{}, fmt.Errorf("you are not authorized to access this data: token's userID and todo's userID not match")
+	}
+
+	return todoVO, nil
 }
 
 func (todoService *TodoService) GetTodosByUserID(allTodoDTO *[]valueobject.GetTodoVO, userID string) error {

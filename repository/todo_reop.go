@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/valueobject"
 
@@ -9,7 +10,7 @@ import (
 )
 
 type ITodoRepository interface {
-	GetAllTodos(todos *[]domain.Todo) error
+	// GetAllTodos(todos *[]domain.Todo) error
 	GetTodoByID(todo *domain.Todo, todoID string) error
 	GetTodosByUserID(todos *[]domain.Todo, userID string) *gorm.DB
 	CreateTodo(todo *domain.Todo, todoDTO valueobject.CreateTodoVO) error
@@ -25,48 +26,50 @@ func NewTodoRepository(db *gorm.DB) *TodoRepository {
 	return &TodoRepository{db: db}
 }
 
-func (repo *TodoRepository) GetAllTodos(allTodoDTO *[]valueobject.GetTodoVO) error {
+// func (repo *TodoRepository) GetAllTodos(allTodoDTO *[]valueobject.GetTodoVO) error {
 
-	allTodo := []domain.Todo{}
+// 	allTodo := []domain.Todo{}
 
-	if err := repo.db.Find(&allTodo).Error; err != nil {
-		return err
-	}
+// 	if err := repo.db.Find(&allTodo).Error; err != nil {
+// 		return err
+// 	}
 
-	*allTodoDTO = make([]valueobject.GetTodoVO, len(allTodo))
+// 	*allTodoDTO = make([]valueobject.GetTodoVO, len(allTodo))
 
-	for i, todo := range allTodo {
-		(*allTodoDTO)[i] = valueobject.GetTodoVO{
-			ID:          todo.ID,
-			Title:       todo.Title,
-			Description: todo.Title,
-			IsCompleted: todo.IsCompleted,
-			Priority:    todo.Priority,
-			Due:         todo.Due,
-			UserID:      todo.UserID,
-		}
-	}
+// 	for i, todo := range allTodo {
+// 		(*allTodoDTO)[i] = valueobject.GetTodoVO{
+// 			ID:          todo.ID,
+// 			Title:       todo.Title,
+// 			Description: todo.Title,
+// 			IsCompleted: todo.IsCompleted,
+// 			Priority:    todo.Priority,
+// 			Due:         todo.Due,
+// 			UserID:      todo.UserID,
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (repo *TodoRepository) GetTodoByID(todoDTO *valueobject.GetTodoVO, todoID string) error {
+func (repo *TodoRepository) GetTodoByID(todoID string) (valueobject.GetTodoVO, error) {
 
 	todo := domain.Todo{}
+	todoVO := valueobject.GetTodoVO{}
 
-	if err := repo.db.Where("id = ?", todoID).First(&todo).Error; err != nil {
-		return err
+	err := repo.db.Where("id = ?", todoID).First(&todo).Error
+	if err != nil {
+		return valueobject.GetTodoVO{}, fmt.Errorf("faile to get todo by id: %w", err)
 	}
 
-	todoDTO.ID = todo.ID
-	todoDTO.Title = todo.Title
-	todoDTO.Description = todo.Description
-	todoDTO.IsCompleted = todo.IsCompleted
-	todoDTO.Priority = todo.Priority
-	todoDTO.Due = todo.Due
-	todoDTO.UserID = todo.UserID
+	todoVO.ID = todo.ID
+	todoVO.Title = todo.Title
+	todoVO.Description = todo.Description
+	todoVO.IsCompleted = todo.IsCompleted
+	todoVO.Priority = todo.Priority
+	todoVO.Due = todo.Due
+	todoVO.UserID = todo.UserID
 
-	return nil
+	return todoVO, nil
 }
 
 func (repo *TodoRepository) GetTodosByUserID(allTodoDTO *[]valueobject.GetTodoVO, userID string) *gorm.DB {

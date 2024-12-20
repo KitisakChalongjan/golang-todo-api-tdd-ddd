@@ -53,7 +53,7 @@ func (service *UserService) UpdateUser(updateUserDTO *valueobject.UpdateUserVO, 
 	}
 
 	if tokenUserId != updateUserDTO.ID {
-		return "", fmt.Errorf("you are not authorized to access this data: token userID and param userID not match")
+		return "", fmt.Errorf("you are not authorized to access update this data: token userID and request body's userID not match")
 	}
 
 	bytes, err := bcrypt.GenerateFromPassword([]byte(updateUserDTO.Password), bcrypt.DefaultCost)
@@ -71,12 +71,21 @@ func (service *UserService) UpdateUser(updateUserDTO *valueobject.UpdateUserVO, 
 	return userID, nil
 }
 
-func (service *UserService) DeleteUser(userID string) error {
+func (service *UserService) DeleteUser(userID string, accessToken *jwt.Token) (string, error) {
 
-	err := service.userRepo.DeleteUser(userID)
+	tokenUserId, err := accessToken.Claims.GetSubject()
 	if err != nil {
-		return err
+		return "", fmt.Errorf("fail to get userID from access token: %w", err)
 	}
 
-	return nil
+	if tokenUserId != userID {
+		return "", fmt.Errorf("you are not authorized to access delete this data: token userID and param userID not match")
+	}
+
+	userID, err = service.userRepo.DeleteUser(userID)
+	if err != nil {
+		return "", err
+	}
+
+	return userID, nil
 }
