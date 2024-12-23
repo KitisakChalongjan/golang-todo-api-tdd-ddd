@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"golang-todo-api-tdd-ddd/core"
-	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
@@ -12,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func InitializeAuthenHandler(engine helper.Engine) {
+func InitializeAuthenHandler(engine core.Engine) {
 	userRepo := repository.NewUserRepository(engine.DB)
 	roleRepo := repository.NewRoleRepository(engine.DB)
 	userRoleRepo := repository.NewUserRoleRepository(engine.DB)
@@ -52,7 +51,8 @@ func (handler *AuthenHandler) SignUp(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	response.Data = map[string]string{"message": fmt.Sprintf("create user id %s", userID)}
+	response.Error = ""
+	response.Data = map[string]string{"message": fmt.Sprintf("user '%s' created", userID)}
 
 	return c.JSON(http.StatusOK, response)
 }

@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"golang-todo-api-tdd-ddd/core"
-	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
@@ -14,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func InitializeUserHandler(engine helper.Engine) {
+func InitializeUserHandler(engine core.Engine) {
 
 	userRepo := repository.NewUserRepository(engine.DB)
 	userService := service.NewUserService(userRepo)
@@ -65,7 +64,7 @@ func (handler *UserHandler) UpdateUser(c echo.Context) error {
 	accessToken := c.Get("user").(*jwt.Token)
 
 	if err := c.Bind(&updateUserDTO); err != nil {
-		response.Error = fmt.Sprintf("invalid request. error: %s.", err)
+		response.Error = fmt.Errorf("invalid request: %s", err).Error()
 		response.Data = nil
 		return c.JSON(http.StatusBadRequest, response)
 	}
@@ -78,7 +77,7 @@ func (handler *UserHandler) UpdateUser(c echo.Context) error {
 	}
 
 	response.Error = ""
-	response.Data = map[string]string{"message": fmt.Sprintf("user '%s' updated", userID)}
+	response.Data = map[string]string{"message": fmt.Errorf("user '%s' updated", userID).Error()}
 
 	return c.JSON(http.StatusOK, response)
 }

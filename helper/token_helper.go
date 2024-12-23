@@ -18,7 +18,7 @@ func GenerateAccessTokenWithClaims(claims jwt.MapClaims, secretKey string) (stri
 	return accessTokenString, nil
 }
 
-func ClaimsTokenFromAccessTokenString(jwtString string) (*jwt.Token, error) {
+func ClaimsTokenFromAccessTokenString(jwtString string) (jwt.Token, error) {
 
 	token, err := jwt.ParseWithClaims(
 		jwtString,
@@ -28,8 +28,8 @@ func ClaimsTokenFromAccessTokenString(jwtString string) (*jwt.Token, error) {
 		},
 	)
 	if err != nil {
-		return nil, err
+		return jwt.Token{}, err
 	}
 
-	return token, nil
+	return *token, nil
 }

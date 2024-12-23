@@ -2,7 +2,6 @@ package handler
 
 import (
 	"golang-todo-api-tdd-ddd/core"
-	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
@@ -20,7 +19,7 @@ func NewRoleHandler(roleService *service.RoleService) *RoleHandler {
 	return &RoleHandler{roleService: roleService}
 }
 
-func InitializeRoleHandler(engine helper.Engine) {
+func InitializeRoleHandler(engine core.Engine) {
 
 	roleRepo := repository.NewRoleRepository(engine.DB)
 	roleService := service.NewRoleService(roleRepo)

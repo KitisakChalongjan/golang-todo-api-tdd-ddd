@@ -3,8 +3,6 @@ package handler
 import (
 	"fmt"
 	"golang-todo-api-tdd-ddd/core"
-	"golang-todo-api-tdd-ddd/domain"
-	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
@@ -15,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func InitializeTodoHandler(engine helper.Engine) {
+func InitializeTodoHandler(engine core.Engine) {
 	todoRepo := repository.NewTodoRepository(engine.DB)
 	todoService := service.NewTodoService(todoRepo)
 	todoHandler := NewTodoHandler(todoService)
@@ -73,56 +71,91 @@ func (handler *TodoHandler) GetTodoByID(c echo.Context) error {
 
 func (handler *TodoHandler) GetTodosByUserID(c echo.Context) error {
 
-	allTodoDTO := []valueobject.GetTodoVO{}
+	response := core.ApiRespose{}
 
 	userID := c.Param("userID")
+	accessToken := c.Get("user").(*jwt.Token)
 
-	if err := handler.todoService.GetTodosByUserID(&allTodoDTO, userID); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all todo by userID. error: %s.", err))
+	allTodoVO, err := handler.todoService.GetTodosByUserID(userID, accessToken)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, allTodoDTO)
+	response.Error = ""
+	response.Data = allTodoVO
+
+	return c.JSON(http.StatusOK, allTodoVO)
 }
 
 func (handler *TodoHandler) CreateTodo(c echo.Context) error {
 
-	todo := domain.Todo{}
+	response := core.ApiRespose{}
 	todoDTO := valueobject.CreateTodoVO{}
 
-	if err := c.Bind(&todoDTO); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
+	err := c.Bind(&todoDTO)
+	if err != nil {
+		response.Error = fmt.Errorf("invalid request: %s", err).Error()
+		response.Data = nil
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	if err := handler.todoService.CreateTodo(&todo, todoDTO); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to create todo. error: %s.", err))
+	todoID, err := handler.todoService.CreateTodo(todoDTO)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("todo '%s' created", todo.ID))
+	response.Error = ""
+	response.Data = map[string]string{"message": fmt.Errorf("todo '%s' created", todoID).Error()}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (handler *TodoHandler) UpdateTodo(c echo.Context) error {
 
-	todo := domain.Todo{}
-	todoDTO := valueobject.UpdateTodoVO{}
+	response := core.ApiRespose{}
+	updateTodoVO := valueobject.UpdateTodoVO{}
 
-	if err := c.Bind(&todoDTO); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid request. error: %s.", err))
+	accessToken := c.Get("user").(*jwt.Token)
+
+	if err := c.Bind(&updateTodoVO); err != nil {
+		response.Error = fmt.Errorf("invalid request: %s", err).Error()
+		response.Data = nil
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	if err := handler.todoService.UpdateTodo(&todo, todoDTO); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to create todo. error: %s.", err))
+	todoID, err := handler.todoService.UpdateTodo(updateTodoVO, accessToken)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' updated", todo.ID))
+	response.Error = ""
+	response.Data = map[string]string{"message": fmt.Errorf("todo '%s' updated", todoID).Error()}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (handler *TodoHandler) DeleteTodo(c echo.Context) error {
 
-	todoID := c.Param("todoID")
+	response := core.ApiRespose{}
 
-	if err := handler.todoService.DeleteTodo(todoID); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to deleted todo. error: %s.", err))
+	todoID := c.Param("todoID")
+	accessToken := c.Get("user").(*jwt.Token)
+
+	todoID, err := handler.todoService.DeleteTodo(todoID, accessToken)
+	if err != nil {
+		response.Error = err.Error()
+		response.Data = nil
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("user '%s' deleted", todoID))
+	response.Error = ""
+	response.Data = map[string]string{"message": fmt.Errorf("todo '%s' deleted", todoID).Error()}
+
+	return c.JSON(http.StatusOK, response)
 }

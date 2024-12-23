@@ -10,11 +10,10 @@ import (
 )
 
 type ITodoRepository interface {
-	// GetAllTodos(todos *[]domain.Todo) error
-	GetTodoByID(todo *domain.Todo, todoID string) error
-	GetTodosByUserID(todos *[]domain.Todo, userID string) *gorm.DB
-	CreateTodo(todo *domain.Todo, todoDTO valueobject.CreateTodoVO) error
-	UpdateTodo(todo *domain.Todo, todoDTO valueobject.UpdateTodoVO) error
+	GetTodoByID(todoID string, tokenUserID string) (valueobject.GetTodoVO, error)
+	GetTodosByUserID(userID string, tokenUserID string) ([]valueobject.GetTodoVO, error)
+	CreateTodo(createTodoVO valueobject.CreateTodoVO) (domain.Todo, error)
+	UpdateTodo(updateTodoVO valueobject.UpdateTodoVO, tokenUserID string) (domain.Todo, error)
 	DeleteTodo(todoID string) error
 }
 
@@ -26,32 +25,7 @@ func NewTodoRepository(db *gorm.DB) *TodoRepository {
 	return &TodoRepository{db: db}
 }
 
-// func (repo *TodoRepository) GetAllTodos(allTodoDTO *[]valueobject.GetTodoVO) error {
-
-// 	allTodo := []domain.Todo{}
-
-// 	if err := repo.db.Find(&allTodo).Error; err != nil {
-// 		return err
-// 	}
-
-// 	*allTodoDTO = make([]valueobject.GetTodoVO, len(allTodo))
-
-// 	for i, todo := range allTodo {
-// 		(*allTodoDTO)[i] = valueobject.GetTodoVO{
-// 			ID:          todo.ID,
-// 			Title:       todo.Title,
-// 			Description: todo.Title,
-// 			IsCompleted: todo.IsCompleted,
-// 			Priority:    todo.Priority,
-// 			Due:         todo.Due,
-// 			UserID:      todo.UserID,
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-func (repo *TodoRepository) GetTodoByID(todoID string) (valueobject.GetTodoVO, error) {
+func (repo *TodoRepository) GetTodoByID(todoID string, tokenUserID string) (valueobject.GetTodoVO, error) {
 
 	todo := domain.Todo{}
 	todoVO := valueobject.GetTodoVO{}
@@ -59,6 +33,10 @@ func (repo *TodoRepository) GetTodoByID(todoID string) (valueobject.GetTodoVO, e
 	err := repo.db.Where("id = ?", todoID).First(&todo).Error
 	if err != nil {
 		return valueobject.GetTodoVO{}, fmt.Errorf("faile to get todo by id: %w", err)
+	}
+
+	if tokenUserID != todo.UserID {
+		return valueobject.GetTodoVO{}, fmt.Errorf("you cannot access this data: userID not match")
 	}
 
 	todoVO.ID = todo.ID
@@ -72,16 +50,23 @@ func (repo *TodoRepository) GetTodoByID(todoID string) (valueobject.GetTodoVO, e
 	return todoVO, nil
 }
 
-func (repo *TodoRepository) GetTodosByUserID(allTodoDTO *[]valueobject.GetTodoVO, userID string) *gorm.DB {
+func (repo *TodoRepository) GetTodosByUserID(userID string, tokenUserID string) ([]valueobject.GetTodoVO, error) {
 
 	allTodo := []domain.Todo{}
 
-	result := repo.db.Where("user_id = ?", userID).Find(&allTodo)
+	err := repo.db.Where("user_id = ?", userID).Find(&allTodo).Error
+	if err != nil {
+		return []valueobject.GetTodoVO{}, fmt.Errorf("faile to get all todo by userID: %w", err)
+	}
 
-	*allTodoDTO = make([]valueobject.GetTodoVO, len(allTodo))
+	if tokenUserID != allTodo[0].UserID {
+		return []valueobject.GetTodoVO{}, fmt.Errorf("you cannot access this data: userID not match")
+	}
+
+	allTodoVO := make([]valueobject.GetTodoVO, len(allTodo))
 
 	for i, todo := range allTodo {
-		(*allTodoDTO)[i] = valueobject.GetTodoVO{
+		allTodoVO[i] = valueobject.GetTodoVO{
 			ID:          todo.ID,
 			Title:       todo.Title,
 			Description: todo.Title,
@@ -92,10 +77,12 @@ func (repo *TodoRepository) GetTodosByUserID(allTodoDTO *[]valueobject.GetTodoVO
 		}
 	}
 
-	return result
+	return allTodoVO, nil
 }
 
-func (repo *TodoRepository) CreateTodo(todo *domain.Todo, todoDTO valueobject.CreateTodoVO) error {
+func (repo *TodoRepository) CreateTodo(createTodoVO valueobject.CreateTodoVO) (domain.Todo, error) {
+
+	todo := domain.Todo{}
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -104,27 +91,35 @@ func (repo *TodoRepository) CreateTodo(todo *domain.Todo, todoDTO valueobject.Cr
 		}
 	}()
 
-	if err := tx.Error; err != nil {
-		return err
+	err := tx.Error
+	if err != nil {
+		return domain.Todo{}, err
 	}
 
 	todo.ID = uuid.New().String()
-	todo.Title = todoDTO.Title
-	todo.Description = todoDTO.Description
+	todo.Title = createTodoVO.Title
+	todo.Description = createTodoVO.Description
 	todo.IsCompleted = false
-	todo.Priority = todoDTO.Priority
-	todo.Due = todoDTO.Due
-	todo.UserID = todoDTO.UserID
+	todo.Priority = createTodoVO.Priority
+	todo.Due = createTodoVO.Due
+	todo.UserID = createTodoVO.UserID
 
 	if err := repo.db.Create(&todo).Error; err != nil {
 		tx.Rollback()
-		return err
+		return domain.Todo{}, err
 	}
 
-	return tx.Commit().Error
+	err = tx.Commit().Error
+	if err != nil {
+		return domain.Todo{}, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return todo, nil
 }
 
-func (repo *TodoRepository) UpdateTodo(todo *domain.Todo, todoDTO valueobject.UpdateTodoVO) error {
+func (repo *TodoRepository) UpdateTodo(updateTodoVO valueobject.UpdateTodoVO, tokenUserID string) (domain.Todo, error) {
+
+	todo := domain.Todo{}
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -133,30 +128,41 @@ func (repo *TodoRepository) UpdateTodo(todo *domain.Todo, todoDTO valueobject.Up
 		}
 	}()
 
-	if err := tx.Error; err != nil {
-		return err
+	err := tx.Error
+	if err != nil {
+		return domain.Todo{}, fmt.Errorf("transaction fail: %s", err.Error())
 	}
 
-	if err := tx.Where("id = ?", todoDTO.ID).First(todo).Error; err != nil {
+	err = tx.Where("id = ?", updateTodoVO.ID).First(&todo).Error
+	if err != nil {
 		tx.Rollback()
-		return err
+		return domain.Todo{}, fmt.Errorf("no todo found: %s", err.Error())
 	}
 
-	todo.Title = todoDTO.Title
-	todo.Description = todoDTO.Description
-	todo.IsCompleted = todoDTO.IsCompleted
-	todo.Priority = todoDTO.Priority
-	todo.Due = todoDTO.Due
+	if tokenUserID != todo.UserID {
+		return domain.Todo{}, fmt.Errorf("you cannot access this data: userID not match")
+	}
+
+	todo.Title = updateTodoVO.Title
+	todo.Description = updateTodoVO.Description
+	todo.IsCompleted = updateTodoVO.IsCompleted
+	todo.Priority = updateTodoVO.Priority
+	todo.Due = updateTodoVO.Due
 
 	if err := tx.Save(&todo).Error; err != nil {
 		tx.Rollback()
-		return err
+		return domain.Todo{}, fmt.Errorf("update todo fail: %s", err.Error())
 	}
 
-	return tx.Commit().Error
+	err = tx.Commit().Error
+	if err != nil {
+		return domain.Todo{}, fmt.Errorf("update todo commit fail: %s", err.Error())
+	}
+
+	return todo, nil
 }
 
-func (repo *TodoRepository) DeleteTodo(todoID string) error {
+func (repo *TodoRepository) DeleteTodo(todoID string, tokenUserID string) (domain.Todo, error) {
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -166,13 +172,30 @@ func (repo *TodoRepository) DeleteTodo(todoID string) error {
 	}()
 
 	if err := tx.Error; err != nil {
-		return err
+		return domain.Todo{}, err
+	}
+
+	todo := domain.Todo{}
+
+	err := tx.Where("id = ?", todoID).First(&todo).Error
+	if err != nil {
+		tx.Rollback()
+		return domain.Todo{}, fmt.Errorf("no todo found: %s", err.Error())
+	}
+
+	if tokenUserID != todo.UserID {
+		return domain.Todo{}, fmt.Errorf("you cannot access this data: userID not match")
 	}
 
 	if err := repo.db.Where("id = ?", todoID).Delete(&domain.Todo{}).Error; err != nil {
 		tx.Rollback()
-		return err
+		return domain.Todo{}, err
 	}
 
-	return tx.Commit().Error
+	err = tx.Commit().Error
+	if err != nil {
+		return domain.Todo{}, fmt.Errorf("delete todo commit fail: %s", err.Error())
+	}
+
+	return todo, nil
 }

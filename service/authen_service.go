@@ -31,12 +31,12 @@ func (service *AuthenService) SignUp(signupDTO valueobject.SignUpVO) (string, er
 
 	signupDTO.Password = string(bytes)
 
-	newUser, err := service.userRepo.CreateUser(signupDTO)
+	user, err := service.userRepo.CreateUser(signupDTO)
 	if err != nil {
 		return "", err
 	}
 
-	return newUser.ID, nil
+	return user.ID, nil
 }
 
 func (service *AuthenService) SignIn(signInVO valueobject.SignInVO) (string, error) {
