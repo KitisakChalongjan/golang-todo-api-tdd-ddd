@@ -13,12 +13,10 @@ import (
 
 type AuthenService struct {
 	userRepo repository.IUserRepository
-	// roleRepo     repository.IRoleRepository
-	// userRoleRepo repository.IUserRoleRepository
 }
 
-func NewAuthenService(userRepo repository.IUserRepository /*, roleRepo repository.IRoleRepository, userRoleRepo repository.IUserRoleRepository*/) *AuthenService {
-	return &AuthenService{userRepo: userRepo /*, roleRepo: roleRepo, userRoleRepo: userRoleRepo*/}
+func NewAuthenService(userRepo repository.IUserRepository) *AuthenService {
+	return &AuthenService{userRepo: userRepo}
 }
 
 func (service *AuthenService) SignUp(signUpVO valueobject.SignUpVO) (string, error) {
@@ -60,31 +58,3 @@ func (service *AuthenService) SignIn(signInVO valueobject.SignInVO, secretKey st
 
 	return accessTokenString, nil
 }
-
-// func GenerateAccessTokenWithClaims(claims jwt.MapClaims, secretKey string) (string, error) {
-
-// 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-// 	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
-// 	if err != nil {
-// 		return "", fmt.Errorf("fail to generate accessToken: %w", err)
-// 	}
-
-// 	return accessTokenString, nil
-// }
-
-// func ClaimsTokenFromAccessTokenString(jwtString string) (*jwt.Token, error) {
-
-// 	token, err := jwt.ParseWithClaims(
-// 		jwtString,
-// 		&jwt.RegisteredClaims{},
-// 		func(token *jwt.Token) (interface{}, error) {
-// 			return []byte("refreshToken"), nil
-// 		},
-// 	)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return token, nil
-// }

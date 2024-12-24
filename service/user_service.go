@@ -10,10 +10,10 @@ import (
 )
 
 type UserService struct {
-	userRepo *repository.UserRepository
+	userRepo repository.IUserRepository
 }
 
-func NewUserService(userRepo *repository.UserRepository) *UserService {
+func NewUserService(userRepo repository.IUserRepository) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
@@ -24,7 +24,7 @@ func (service *UserService) GetUserByID(userID string, accessToken *jwt.Token) (
 		return valueobject.GetUserVO{}, fmt.Errorf("fail to get userID from access token: %w", err)
 	}
 
-	getUserVO, err := service.userRepo.GetUserById(userID, tokenUserId)
+	getUserVO, err := service.userRepo.GetUserByID(userID, tokenUserId)
 	if err != nil {
 		return valueobject.GetUserVO{}, err
 	}

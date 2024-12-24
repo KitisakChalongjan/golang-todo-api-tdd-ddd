@@ -11,7 +11,7 @@ import (
 )
 
 type IUserRepository interface {
-	GetUserById(userID string, tokenUserID string) (valueobject.GetUserVO, error)
+	GetUserByID(userID string, tokenUserID string) (valueobject.GetUserVO, error)
 	GetUserByCredential(signInVO valueobject.SignInVO) (valueobject.GetUserVO, error)
 	CreateUser(signUpVO valueobject.SignUpVO) (domain.User, error)
 	UpdateUser(updateUserVO valueobject.UpdateUserVO, tokenUserID string) (domain.User, error)

@@ -2,48 +2,20 @@ package service_test
 
 import (
 	"errors"
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
 	"testing"
 
-	"github.com/labstack/gommon/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-type MockUserRepository struct {
-	mock.Mock
-}
-
-func (m *MockUserRepository) GetUserById(userID string, tokenUserID string) (valueobject.GetUserVO, error) {
-	args := m.Called(userID, tokenUserID)
-	return args.Get(0).(valueobject.GetUserVO), args.Error(1)
-}
-func (m *MockUserRepository) GetUserByCredential(signInVO valueobject.SignInVO) (valueobject.GetUserVO, error) {
-	args := m.Called(signInVO)
-	return args.Get(0).(valueobject.GetUserVO), args.Error(1)
-}
-
-func (m *MockUserRepository) CreateUser(signUpVO valueobject.SignUpVO) (domain.User, error) {
-	args := m.Called(signUpVO)
-	return args.Get(0).(domain.User), args.Error(1)
-}
-
-func (m *MockUserRepository) UpdateUser(updateUserVO valueobject.UpdateUserVO, tokenUserID string) (domain.User, error) {
-	args := m.Called(updateUserVO, tokenUserID)
-	return args.Get(0).(domain.User), args.Error(1)
-}
-
-func (m *MockUserRepository) DeleteUser(userID string, tokenUserID string) (domain.User, error) {
-	args := m.Called(userID, tokenUserID)
-	return args.Get(0).(domain.User), args.Error(1)
-}
-
 func TestSuccessSignUp1(t *testing.T) {
 
-	log.Info("testing TestSuccessSignUp1()....")
+	fmt.Println("testing TestSuccessSignUp1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -65,9 +37,9 @@ func TestSuccessSignUp1(t *testing.T) {
 	assert.Equal(t, "xxxx-xxxx-xxxx-xxxx", userID)
 }
 
-func TestErrorSignUp1(t *testing.T) {
+func TestFailSignUp1(t *testing.T) {
 
-	log.Info("testing TestErrorSignUp1()....")
+	fmt.Println("testing TestFailSignUp1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -94,7 +66,7 @@ func TestErrorSignUp1(t *testing.T) {
 
 func TestSuccessSignIn1(t *testing.T) {
 
-	log.Info("testing TestSuccessSignIn1()....")
+	fmt.Println("testing TestSuccessSignIn1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -121,9 +93,9 @@ func TestSuccessSignIn1(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
-func TestErrorSignIn1(t *testing.T) {
+func TestFailSignIn1(t *testing.T) {
 
-	log.Info("testing TestErrorSignIn1()....")
+	fmt.Println("testing TestFailSignIn1()....")
 
 	mockRepo := new(MockUserRepository)
 
