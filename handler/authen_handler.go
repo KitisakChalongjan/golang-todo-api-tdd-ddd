@@ -7,15 +7,16 @@ import (
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo/v4"
 )
 
 func InitializeAuthenHandler(engine core.Engine) {
 	userRepo := repository.NewUserRepository(engine.DB)
-	roleRepo := repository.NewRoleRepository(engine.DB)
-	userRoleRepo := repository.NewUserRoleRepository(engine.DB)
-	authenService := service.NewAuthenService(userRepo, roleRepo, userRoleRepo)
+	// roleRepo := repository.NewRoleRepository(engine.DB)
+	// userRoleRepo := repository.NewUserRoleRepository(engine.DB)
+	authenService := service.NewAuthenService(userRepo /*, roleRepo, userRoleRepo*/)
 	authenHandler := NewAuthenHandler(authenService)
 
 	authenGroup := engine.Echo.Group("/authen")
@@ -60,16 +61,21 @@ func (handler *AuthenHandler) SignUp(c echo.Context) error {
 func (handler *AuthenHandler) SignIn(c echo.Context) error {
 
 	response := core.ApiRespose{}
-	loginDTO := valueobject.SignInVO{}
+	signInVO := valueobject.SignInVO{}
 
-	err := c.Bind(&loginDTO)
+	err := c.Bind(&signInVO)
 	if err != nil {
 		response.Error = err.Error()
 		response.Data = nil
 		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	accessTokenString, err := handler.authenService.SignIn(loginDTO)
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		return fmt.Errorf("JWT_SECRET environment variable not set")
+	}
+
+	accessTokenString, err := handler.authenService.SignIn(signInVO, secretKey)
 	if err != nil {
 		response.Error = err.Error()
 		response.Data = nil

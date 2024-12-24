@@ -7,7 +7,7 @@ import (
 )
 
 type IUserRoleRepository interface {
-	CreateUserRoles(userID string, roleIDs []string) (*[]domain.UsersRoles, error)
+	CreateUserRoles(userID string, roleIDs []string) ([]domain.UsersRoles, error)
 }
 
 type UserRoleRepository struct {

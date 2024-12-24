@@ -69,7 +69,7 @@ func (handler *UserHandler) UpdateUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	userID, err := handler.userService.UpdateUser(&updateUserDTO, accessToken)
+	userID, err := handler.userService.UpdateUser(updateUserDTO, accessToken)
 	if err != nil {
 		response.Error = err.Error()
 		response.Data = nil

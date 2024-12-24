@@ -8,7 +8,7 @@ import (
 )
 
 type IRoleRepository interface {
-	CreateRole(name string) (*domain.Role, error)
+	CreateRole(name string) (domain.Role, error)
 }
 
 type RoleRepository struct {
@@ -19,7 +19,7 @@ func NewRoleRepository(db *gorm.DB) *RoleRepository {
 	return &RoleRepository{db: db}
 }
 
-func (repo *RoleRepository) CreateRole(name string) (*domain.Role, error) {
+func (repo *RoleRepository) CreateRole(name string) (domain.Role, error) {
 
 	tx := repo.db.Begin()
 	defer func() {
@@ -30,24 +30,24 @@ func (repo *RoleRepository) CreateRole(name string) (*domain.Role, error) {
 
 	err := tx.Error
 	if err != nil {
-		return nil, err
+		return domain.Role{}, err
 	}
 
-	newRole := domain.Role{}
+	role := domain.Role{}
 
-	newRole.ID = uuid.NewString()
-	newRole.Name = name
+	role.ID = uuid.NewString()
+	role.Name = name
 
-	err = tx.Create(&newRole).Error
+	err = tx.Create(&role).Error
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return domain.Role{}, err
 	}
 
 	err = tx.Commit().Error
 	if err != nil {
-		return nil, err
+		return domain.Role{}, err
 	}
 
-	return &newRole, nil
+	return role, nil
 }

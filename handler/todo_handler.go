@@ -22,7 +22,6 @@ func InitializeTodoHandler(engine core.Engine) {
 
 	todoGroup.Use(echojwt.WithConfig(echojwt.Config{SigningKey: []byte(engine.SecretKey)}))
 
-	// todoGroup.GET("/all", todoHandler.GetAllTodo)
 	todoGroup.GET("/:todoID", todoHandler.GetTodoByID)
 	todoGroup.GET("/user/:userID", todoHandler.GetTodosByUserID)
 	todoGroup.POST("/", todoHandler.CreateTodo)
@@ -37,17 +36,6 @@ type TodoHandler struct {
 func NewTodoHandler(todoService *service.TodoService) *TodoHandler {
 	return &TodoHandler{todoService: todoService}
 }
-
-// func (handler *TodoHandler) GetAllTodo(c echo.Context) error {
-
-// 	allTodoDTO := []valueobject.GetTodoVO{}
-
-// 	if err := handler.todoService.GetAllTodo(&allTodoDTO); err != nil {
-// 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("fail to get all todo. error: %s.", err))
-// 	}
-
-// 	return c.JSON(http.StatusOK, allTodoDTO)
-// }
 
 func (handler *TodoHandler) GetTodoByID(c echo.Context) error {
 

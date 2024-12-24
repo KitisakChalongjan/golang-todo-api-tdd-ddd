@@ -32,7 +32,7 @@ func (service *UserService) GetUserByID(userID string, accessToken *jwt.Token) (
 	return getUserVO, nil
 }
 
-func (service *UserService) UpdateUser(updateUserVO *valueobject.UpdateUserVO, accessToken *jwt.Token) (string, error) {
+func (service *UserService) UpdateUser(updateUserVO valueobject.UpdateUserVO, accessToken *jwt.Token) (string, error) {
 
 	tokenUserId, err := accessToken.Claims.GetSubject()
 	if err != nil {

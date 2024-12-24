@@ -5,7 +5,6 @@ import (
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/valueobject"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,25 +12,26 @@ import (
 )
 
 type AuthenService struct {
-	userRepo     *repository.UserRepository
-	roleRepo     *repository.RoleRepository
-	userRoleRepo *repository.UserRoleRepository
+	userRepo repository.IUserRepository
+	// roleRepo     repository.IRoleRepository
+	// userRoleRepo repository.IUserRoleRepository
 }
 
-func NewAuthenService(userRepo *repository.UserRepository, roleRepo *repository.RoleRepository, userRoleRepo *repository.UserRoleRepository) *AuthenService {
-	return &AuthenService{userRepo: userRepo, roleRepo: roleRepo, userRoleRepo: userRoleRepo}
+func NewAuthenService(userRepo repository.IUserRepository /*, roleRepo repository.IRoleRepository, userRoleRepo repository.IUserRoleRepository*/) *AuthenService {
+	return &AuthenService{userRepo: userRepo /*, roleRepo: roleRepo, userRoleRepo: userRoleRepo*/}
 }
 
-func (service *AuthenService) SignUp(signupDTO valueobject.SignUpVO) (string, error) {
+func (service *AuthenService) SignUp(signUpVO valueobject.SignUpVO) (string, error) {
 
-	bytes, err := bcrypt.GenerateFromPassword([]byte(signupDTO.Password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(signUpVO.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", fmt.Errorf("fail to generate password hash: %w", err)
 	}
 
-	signupDTO.Password = string(bytes)
+	hashedPasswordSignUpVO := signUpVO
+	hashedPasswordSignUpVO.Password = string(bytes)
 
-	user, err := service.userRepo.CreateUser(signupDTO)
+	user, err := service.userRepo.CreateUser(hashedPasswordSignUpVO)
 	if err != nil {
 		return "", err
 	}
@@ -39,16 +39,11 @@ func (service *AuthenService) SignUp(signupDTO valueobject.SignUpVO) (string, er
 	return user.ID, nil
 }
 
-func (service *AuthenService) SignIn(signInVO valueobject.SignInVO) (string, error) {
-
-	secretKey := os.Getenv("JWT_SECRET")
-	if secretKey == "" {
-		return "", fmt.Errorf("JWT_SECRET environment variable not set")
-	}
+func (service *AuthenService) SignIn(signInVO valueobject.SignInVO, secretKey string) (string, error) {
 
 	getUserVO, err := service.userRepo.GetUserByCredential(signInVO)
 	if err != nil {
-		return "", fmt.Errorf("cannot get user by credential: %w", err)
+		return "", err
 	}
 
 	jwtClaims := jwt.MapClaims{

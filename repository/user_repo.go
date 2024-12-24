@@ -12,10 +12,10 @@ import (
 
 type IUserRepository interface {
 	GetUserById(userID string, tokenUserID string) (valueobject.GetUserVO, error)
-	GetUserByCredential(loginDTO valueobject.SignInVO) error
-	CreateUser(updateUserDTO *valueobject.UpdateUserVO, tokenUserID string) (domain.User, error)
-	UpdateUser(userID string, userDTO valueobject.UpdateUserVO) error
-	DeleteUser(userID string) (string, error)
+	GetUserByCredential(signInVO valueobject.SignInVO) (valueobject.GetUserVO, error)
+	CreateUser(signUpVO valueobject.SignUpVO) (domain.User, error)
+	UpdateUser(updateUserVO valueobject.UpdateUserVO, tokenUserID string) (domain.User, error)
+	DeleteUser(userID string, tokenUserId string) (domain.User, error)
 }
 
 type UserRepository struct {
@@ -84,7 +84,7 @@ func (repo *UserRepository) GetUserByCredential(signInVO valueobject.SignInVO) (
 	return getUserVO, nil
 }
 
-func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.User, error) {
+func (repo *UserRepository) CreateUser(signUpVO valueobject.SignUpVO) (domain.User, error) {
 
 	tx := repo.db.Begin()
 
@@ -100,11 +100,11 @@ func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.U
 
 	user := domain.User{}
 	user.ID = uuid.New().String()
-	user.Name = signupDTO.Name
-	user.Email = signupDTO.Email
-	user.ProfileImgURL = signupDTO.ProfileImgURL
-	user.Username = signupDTO.Username
-	user.PasswordHash = signupDTO.Password
+	user.Name = signUpVO.Name
+	user.Email = signUpVO.Email
+	user.ProfileImgURL = signUpVO.ProfileImgURL
+	user.Username = signUpVO.Username
+	user.PasswordHash = signUpVO.Password
 
 	if err := tx.Create(&user).Error; err != nil {
 		tx.Rollback()
@@ -112,7 +112,7 @@ func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.U
 	}
 
 	roles := []domain.Role{}
-	err := repo.db.Where("name IN (?)", signupDTO.Roles).Find(&roles).Error
+	err := repo.db.Where("name IN (?)", signUpVO.Roles).Find(&roles).Error
 	if err != nil {
 		return domain.User{}, fmt.Errorf("failed to find roles: %w", err)
 	}
@@ -138,7 +138,7 @@ func (repo *UserRepository) CreateUser(signupDTO valueobject.SignUpVO) (domain.U
 	return user, nil
 }
 
-func (repo *UserRepository) UpdateUser(updateUserVO *valueobject.UpdateUserVO, tokenUserID string) (domain.User, error) {
+func (repo *UserRepository) UpdateUser(updateUserVO valueobject.UpdateUserVO, tokenUserID string) (domain.User, error) {
 
 	user := domain.User{}
 

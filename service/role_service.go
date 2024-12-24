@@ -16,10 +16,10 @@ func NewRoleService(roleRepo *repository.RoleRepository) *RoleService {
 
 func (service *RoleService) CreateRole(roleVO valueobject.CreateRoleVO) (string, error) {
 
-	newRole, err := service.roleRepo.CreateRole(roleVO.Name)
+	role, err := service.roleRepo.CreateRole(roleVO.Name)
 	if err != nil {
-		return "", fmt.Errorf("create new role fail. error: %w", err)
+		return "", fmt.Errorf("create new role fail: %w", err)
 	}
 
-	return newRole.ID, nil
+	return role.ID, nil
 }

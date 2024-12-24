@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"golang-todo-api-tdd-ddd/core"
 	"golang-todo-api-tdd-ddd/repository"
 	"golang-todo-api-tdd-ddd/service"
@@ -39,7 +40,7 @@ func (handler *RoleHandler) CreateRole(c echo.Context) error {
 	roleVO := valueobject.CreateRoleVO{}
 
 	if err := c.Bind(&roleVO); err != nil {
-		response.Error = err.Error()
+		response.Error = fmt.Errorf("invalid request: %s", err).Error()
 		response.Data = nil
 		return c.JSON(http.StatusBadRequest, response)
 	}
