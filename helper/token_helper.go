@@ -18,13 +18,18 @@ func GenerateAccessTokenWithClaims(claims jwt.MapClaims, secretKey string) (stri
 	return accessTokenString, nil
 }
 
-func ClaimsTokenFromAccessTokenString(jwtString string) (jwt.Token, error) {
+func TokenClaimsFromAccessTokenString(jwtString string, secretKey string) (jwt.Token, error) {
 
 	token, err := jwt.ParseWithClaims(
 		jwtString,
 		&jwt.RegisteredClaims{},
 		func(token *jwt.Token) (interface{}, error) {
-			return []byte("refreshToken"), nil
+
+			_, ok := token.Method.(*jwt.SigningMethodHMAC)
+			if !ok {
+				return nil, fmt.Errorf("invalid signing method: %v", token.Header["alg"])
+			}
+			return []byte(secretKey), nil
 		},
 	)
 	if err != nil {
