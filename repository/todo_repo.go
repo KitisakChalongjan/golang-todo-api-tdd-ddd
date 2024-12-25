@@ -14,7 +14,7 @@ type ITodoRepository interface {
 	GetTodosByUserID(userID string, tokenUserID string) ([]valueobject.GetTodoVO, error)
 	CreateTodo(createTodoVO valueobject.CreateTodoVO) (domain.Todo, error)
 	UpdateTodo(updateTodoVO valueobject.UpdateTodoVO, tokenUserID string) (domain.Todo, error)
-	DeleteTodo(todoID string) error
+	DeleteTodo(todoID string, tokenUserID string) (domain.Todo, error)
 }
 
 type TodoRepository struct {
