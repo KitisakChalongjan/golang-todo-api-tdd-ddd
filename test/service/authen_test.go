@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"errors"
-	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/service"
@@ -15,7 +14,7 @@ import (
 
 func TestSuccessSignUp1(t *testing.T) {
 
-	fmt.Println("testing TestSuccessSignUp1()....")
+	t.Log("testing TestSuccessSignUp1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -33,13 +32,19 @@ func TestSuccessSignUp1(t *testing.T) {
 
 	userID, err := authenService.SignUp(signUpVO)
 
-	assert.NoError(t, err)
-	assert.Equal(t, "xxxx-xxxx-xxxx-xxxx", userID)
+	a1 := assert.NoError(t, err)
+	a2 := assert.Equal(t, "xxxx-xxxx-xxxx-xxxx", userID)
+
+	if a1 && a2 {
+		t.Log("TestSuccessSignUp1 passed")
+	}
+
+	t.Log("TestSuccessSignUp1 failed")
 }
 
 func TestFailSignUp1(t *testing.T) {
 
-	fmt.Println("testing TestFailSignUp1()....")
+	t.Log("testing TestFailSignUp1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -57,16 +62,21 @@ func TestFailSignUp1(t *testing.T) {
 
 	userID, err := authenService.SignUp(signUpVO)
 
-	assert.Error(t, err)
-	assert.Equal(t, "", userID)
-	assert.EqualError(t, errors.New("SignUp error!"), err.Error())
+	a1 := assert.Error(t, err)
+	a2 := assert.Equal(t, "", userID)
+	a3 := assert.EqualError(t, errors.New("SignUp error!"), err.Error())
+	a4 := mockRepo.AssertExpectations(t)
 
-	mockRepo.AssertExpectations(t)
+	if a1 && a2 && a3 && a4 {
+		t.Log("TestFailSignUp1 passed")
+	}
+
+	t.Log("TestFailSignUp1 failed")
 }
 
 func TestSuccessSignIn1(t *testing.T) {
 
-	fmt.Println("testing TestSuccessSignIn1()....")
+	t.Log("testing TestSuccessSignIn1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -87,15 +97,20 @@ func TestSuccessSignIn1(t *testing.T) {
 
 	sub, _ := tokenClaims.Claims.GetSubject()
 
-	assert.NoError(t, err)
-	assert.Equal(t, "xxxx-xxxx-xxxx-xxxx", sub)
+	a1 := assert.NoError(t, err)
+	a2 := assert.Equal(t, "xxxx-xxxx-xxxx-xxxx", sub)
+	a3 := mockRepo.AssertExpectations(t)
 
-	mockRepo.AssertExpectations(t)
+	if a1 && a2 && a3 {
+		t.Log("TestSuccessSignIn1 passed")
+	}
+
+	t.Log("TestSuccessSignIn1 failed")
 }
 
 func TestFailSignIn1(t *testing.T) {
 
-	fmt.Println("testing TestFailSignIn1()....")
+	t.Log("testing TestFailSignIn1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -112,9 +127,14 @@ func TestFailSignIn1(t *testing.T) {
 
 	accessTokenString, err := authenService.SignIn(signInVO, secretKey)
 
-	assert.Error(t, err)
-	assert.Equal(t, "", accessTokenString)
-	assert.EqualError(t, errors.New("SignIn error!"), err.Error())
+	a1 := assert.Error(t, err)
+	a2 := assert.Equal(t, "", accessTokenString)
+	a3 := assert.EqualError(t, errors.New("SignIn error!"), err.Error())
+	a4 := mockRepo.AssertExpectations(t)
 
-	mockRepo.AssertExpectations(t)
+	if a1 && a2 && a3 && a4 {
+		t.Log("TestFailSignIn1 passed")
+	}
+
+	t.Log("TestFailSignIn1 failed")
 }

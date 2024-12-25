@@ -26,7 +26,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (repo *UserRepository) GetUserById(userID string, tokenUserID string) (valueobject.GetUserVO, error) {
+func (repo *UserRepository) GetUserByID(userID string, tokenUserID string) (valueobject.GetUserVO, error) {
 
 	user := domain.User{}
 	userVO := valueobject.GetUserVO{}
