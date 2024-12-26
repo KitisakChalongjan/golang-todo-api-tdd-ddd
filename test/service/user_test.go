@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"errors"
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
@@ -43,7 +44,7 @@ func (m *MockUserRepository) DeleteUser(userID string, tokenUserID string) (doma
 
 func TestSuccessGetUserByID(t *testing.T) {
 
-	t.Log("testing TestSuccessGetUserByID()....")
+	fmt.Println("testing TestSuccessGetUserByID()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -61,15 +62,17 @@ func TestSuccessGetUserByID(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestSuccessGetUserByID passed")
+		fmt.Println("TestSuccessGetUserByID passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestSuccessGetUserByID failed")
+	fmt.Println("TestSuccessGetUserByID failed")
 }
 
 func TestFailGetUserByID1(t *testing.T) {
 
-	t.Log("testing TestFailGetUserByID1()....")
+	fmt.Println("testing TestFailGetUserByID1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -87,15 +90,17 @@ func TestFailGetUserByID1(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestFailGetUserByID1 passed")
+		fmt.Println("TestFailGetUserByID1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestFailGetUserByID1 failed")
+	fmt.Println("TestFailGetUserByID1 failed")
 }
 
 func TestSuccessUpdateUser1(t *testing.T) {
 
-	t.Log("testing TestSuccessUpdateUser1()....")
+	fmt.Println("testing TestSuccessUpdateUser1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -119,15 +124,17 @@ func TestSuccessUpdateUser1(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestSuccessUpdateUser1 passed")
+		fmt.Println("TestSuccessUpdateUser1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestSuccessUpdateUser1 failed")
+	fmt.Println("TestSuccessUpdateUser1 failed")
 }
 
 func TestFailUpdateUser1(t *testing.T) {
 
-	t.Log("testing TestFailUpdateUser1()....")
+	fmt.Println("testing TestFailUpdateUser1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -151,15 +158,17 @@ func TestFailUpdateUser1(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestFailUpdateUser1 passed")
+		fmt.Println("TestFailUpdateUser1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestFailUpdateUser1 failed")
+	fmt.Println("TestFailUpdateUser1 failed")
 }
 
 func TestSuccessDeleteUser1(t *testing.T) {
 
-	t.Log("testing TestSuccessDeleteUser1()....")
+	fmt.Println("testing TestSuccessDeleteUser1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -177,15 +186,17 @@ func TestSuccessDeleteUser1(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestSuccessDeleteUser1 passed")
+		fmt.Println("TestSuccessDeleteUser1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestSuccessDeleteUser1 failed")
+	fmt.Println("TestSuccessDeleteUser1 failed")
 }
 
 func TestFailDeleteUser1(t *testing.T) {
 
-	t.Log("testing TestFailDeleteUser1()....")
+	fmt.Println("testing TestFailDeleteUser1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -203,8 +214,10 @@ func TestFailDeleteUser1(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestFailDeleteUser1 passed")
+		fmt.Println("TestFailDeleteUser1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestFailDeleteUser1 failed")
+	fmt.Println("TestFailDeleteUser1 failed")
 }

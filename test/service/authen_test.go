@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"errors"
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/helper"
 	"golang-todo-api-tdd-ddd/service"
@@ -14,7 +15,7 @@ import (
 
 func TestSuccessSignUp1(t *testing.T) {
 
-	t.Log("testing TestSuccessSignUp1()....")
+	fmt.Println("testing TestSuccessSignUp1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -36,15 +37,17 @@ func TestSuccessSignUp1(t *testing.T) {
 	a2 := assert.Equal(t, "xxxx-xxxx-xxxx-xxxx", userID)
 
 	if a1 && a2 {
-		t.Log("TestSuccessSignUp1 passed")
+		fmt.Println("TestSuccessSignUp1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestSuccessSignUp1 failed")
+	fmt.Println("TestSuccessSignUp1 failed")
 }
 
 func TestFailSignUp1(t *testing.T) {
 
-	t.Log("testing TestFailSignUp1()....")
+	fmt.Println("testing TestFailSignUp1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -68,15 +71,17 @@ func TestFailSignUp1(t *testing.T) {
 	a4 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 && a4 {
-		t.Log("TestFailSignUp1 passed")
+		fmt.Println("TestFailSignUp1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestFailSignUp1 failed")
+	fmt.Println("TestFailSignUp1 failed")
 }
 
 func TestSuccessSignIn1(t *testing.T) {
 
-	t.Log("testing TestSuccessSignIn1()....")
+	fmt.Println("testing TestSuccessSignIn1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -102,15 +107,17 @@ func TestSuccessSignIn1(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestSuccessSignIn1 passed")
+		fmt.Println("TestSuccessSignIn1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestSuccessSignIn1 failed")
+	fmt.Println("TestSuccessSignIn1 failed")
 }
 
 func TestFailSignIn1(t *testing.T) {
 
-	t.Log("testing TestFailSignIn1()....")
+	fmt.Println("testing TestFailSignIn1()....")
 
 	mockRepo := new(MockUserRepository)
 
@@ -133,8 +140,10 @@ func TestFailSignIn1(t *testing.T) {
 	a4 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 && a4 {
-		t.Log("TestFailSignIn1 passed")
+		fmt.Println("TestFailSignIn1 passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestFailSignIn1 failed")
+	fmt.Println("TestFailSignIn1 failed")
 }

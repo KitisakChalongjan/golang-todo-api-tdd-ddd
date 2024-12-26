@@ -2,10 +2,12 @@ package service_test
 
 import (
 	"errors"
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"golang-todo-api-tdd-ddd/service"
 	"golang-todo-api-tdd-ddd/valueobject"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +45,7 @@ func (m *MockTodoRepository) DeleteTodo(todoID string, tokenUserID string) (doma
 
 func TestSuccessGetTodoByID(t *testing.T) {
 
-	t.Log("testing TestSuccessGetTodoByID()....")
+	fmt.Println("testing TestSuccessGetTodoByID()....")
 
 	mockRepo := new(MockTodoRepository)
 
@@ -61,15 +63,17 @@ func TestSuccessGetTodoByID(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestSuccessGetTodoByID passed")
+		fmt.Println("TestSuccessGetTodoByID passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestSuccessGetTodoByID failed")
+	fmt.Println("TestSuccessGetTodoByID failed")
 }
 
 func TestFailGetTodoByID(t *testing.T) {
 
-	t.Log("testing TestFailGetTodoByID....")
+	fmt.Println("testing TestFailGetTodoByID....")
 
 	mockRepo := new(MockTodoRepository)
 
@@ -87,15 +91,17 @@ func TestFailGetTodoByID(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestFailGetTodoByID passed")
+		fmt.Println("TestFailGetTodoByID passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestFailGetTodoByID failed")
+	fmt.Println("TestFailGetTodoByID failed")
 }
 
 func TestSuccessGetTodosByUserID(t *testing.T) {
 
-	t.Log("testing TestSuccessGetTodosByUserID....")
+	fmt.Println("testing TestSuccessGetTodosByUserID....")
 
 	mockRepo := new(MockTodoRepository)
 
@@ -114,15 +120,17 @@ func TestSuccessGetTodosByUserID(t *testing.T) {
 	a4 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 && a4 {
-		t.Log("TestSuccessGetTodosByUserID passed")
+		fmt.Println("TestSuccessGetTodosByUserID passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestSuccessGetTodosByUserID failed")
+	fmt.Println("TestSuccessGetTodosByUserID failed")
 }
 
 func TestFailGetTodosByUserID(t *testing.T) {
 
-	t.Log("testing TestFailGetTodosByUserID....")
+	fmt.Println("testing TestFailGetTodosByUserID....")
 
 	mockRepo := new(MockTodoRepository)
 
@@ -140,8 +148,208 @@ func TestFailGetTodosByUserID(t *testing.T) {
 	a3 := mockRepo.AssertExpectations(t)
 
 	if a1 && a2 && a3 {
-		t.Log("TestFailGetTodosByUserID passed")
+		fmt.Println("TestFailGetTodosByUserID passed")
+		fmt.Println(" ")
+		return
 	}
 
-	t.Log("TestFailGetTodosByUserID failed")
+	fmt.Println("TestFailGetTodosByUserID failed")
+}
+
+func TestSuccessCreateTodo(t *testing.T) {
+
+	fmt.Println("testing TestSuccessCreateTodo....")
+
+	mockRepo := new(MockTodoRepository)
+
+	todoService := service.NewTodoService(mockRepo)
+
+	due := time.Now().Add(time.Hour * 3)
+
+	createTodoVO := valueobject.CreateTodoVO{
+		Title:       "title",
+		Description: "description",
+		Priority:    "high",
+		Due:         &due,
+	}
+
+	mockRepo.On("CreateTodo", mock.Anything).Return(domain.Todo{ID: "11111111-1111-1111-1111-111111111111", UserID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}, nil)
+
+	todoID, err := todoService.CreateTodo(createTodoVO)
+
+	a1 := assert.NoError(t, err)
+	a2 := assert.Equal(t, "11111111-1111-1111-1111-111111111111", todoID)
+	a3 := mockRepo.AssertExpectations(t)
+
+	if a1 && a2 && a3 {
+		fmt.Println("TestSuccessCreateTodo passed")
+		fmt.Println(" ")
+		return
+	}
+
+	fmt.Println("TestSuccessCreateTodo failed")
+}
+
+func TestFailCreateTodo(t *testing.T) {
+
+	fmt.Println("testing TestFailCreateTodo....")
+
+	mockRepo := new(MockTodoRepository)
+
+	todoService := service.NewTodoService(mockRepo)
+
+	due := time.Now().Add(time.Hour * 6)
+
+	createTodoVO := valueobject.CreateTodoVO{
+		Title:       "title",
+		Description: "description",
+		Priority:    "high",
+		Due:         &due,
+	}
+
+	mockRepo.On("CreateTodo", mock.Anything).Return(domain.Todo{}, errors.New("CreateTodo error"))
+
+	todoID, err := todoService.CreateTodo(createTodoVO)
+
+	a1 := assert.Error(t, err)
+	a2 := assert.Equal(t, "", todoID)
+	a3 := mockRepo.AssertExpectations(t)
+
+	if a1 && a2 && a3 {
+		fmt.Println("TestFailCreateTodo passed")
+		fmt.Println(" ")
+		return
+	}
+
+	fmt.Println("TestFailCreateTodo failed")
+}
+
+func TestSuccessUpdateTodo(t *testing.T) {
+
+	fmt.Println("testing TestSuccessUpdateTodo....")
+
+	mockRepo := new(MockTodoRepository)
+
+	todoService := service.NewTodoService(mockRepo)
+
+	due := time.Now().Add(time.Hour * 3)
+
+	updateTodoVO := valueobject.UpdateTodoVO{
+		ID:          "11111111-1111-1111-1111-111111111111",
+		Title:       "title",
+		Description: "description",
+		Priority:    "high",
+		IsCompleted: true,
+		Due:         &due,
+	}
+	accessToken := jwt.Token{Claims: jwt.RegisteredClaims{Subject: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}}
+
+	mockRepo.On("UpdateTodo", mock.Anything, mock.Anything).Return(domain.Todo{ID: "11111111-1111-1111-1111-111111111111", UserID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}, nil)
+
+	todoID, err := todoService.UpdateTodo(updateTodoVO, &accessToken)
+
+	a1 := assert.NoError(t, err)
+	a2 := assert.Equal(t, updateTodoVO.ID, todoID)
+	a3 := mockRepo.AssertExpectations(t)
+
+	if a1 && a2 && a3 {
+		fmt.Println("TestSuccessUpdateTodo passed")
+		fmt.Println(" ")
+		return
+	}
+
+	fmt.Println("TestSuccessUpdateTodo failed")
+}
+
+func TestFailUpdateTodo(t *testing.T) {
+
+	fmt.Println("testing TestFailUpdateTodo....")
+
+	mockRepo := new(MockTodoRepository)
+
+	todoService := service.NewTodoService(mockRepo)
+
+	due := time.Now().Add(time.Hour * 3)
+
+	updateTodoVO := valueobject.UpdateTodoVO{
+		ID:          "11111111-1111-1111-1111-111111111111",
+		Title:       "title",
+		Description: "description",
+		Priority:    "high",
+		IsCompleted: true,
+		Due:         &due,
+	}
+	accessToken := jwt.Token{Claims: jwt.RegisteredClaims{Subject: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}}
+
+	mockRepo.On("UpdateTodo", mock.Anything, mock.Anything).Return(domain.Todo{}, errors.New("UpdateTodo error"))
+
+	todoID, err := todoService.UpdateTodo(updateTodoVO, &accessToken)
+
+	a1 := assert.Error(t, err)
+	a2 := assert.Equal(t, "", todoID)
+	a3 := mockRepo.AssertExpectations(t)
+
+	if a1 && a2 && a3 {
+		fmt.Println("TestFailUpdateTodo passed")
+		fmt.Println(" ")
+		return
+	}
+
+	fmt.Println("TestFailUpdateTodo failed")
+}
+
+func TestSuccessDeleteTodo(t *testing.T) {
+
+	fmt.Println("testing TestSuccessDeleteTodo....")
+
+	mockRepo := new(MockTodoRepository)
+
+	todoService := service.NewTodoService(mockRepo)
+
+	todoID := "11111111-1111-1111-1111-111111111111"
+	accessToken := jwt.Token{Claims: jwt.RegisteredClaims{Subject: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}}
+
+	mockRepo.On("DeleteTodo", mock.Anything, mock.Anything).Return(domain.Todo{ID: "11111111-1111-1111-1111-111111111111", UserID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}, nil)
+
+	todoIDResult, err := todoService.DeleteTodo(todoID, &accessToken)
+
+	a1 := assert.NoError(t, err)
+	a2 := assert.Equal(t, todoID, todoIDResult)
+	a3 := mockRepo.AssertExpectations(t)
+
+	if a1 && a2 && a3 {
+		fmt.Println("TestSuccessDeleteTodo passed")
+		fmt.Println(" ")
+		return
+	}
+
+	fmt.Println("TestSuccessDeleteTodo failed")
+}
+
+func TestFailDeleteTodo(t *testing.T) {
+
+	fmt.Println("testing TestFailDeleteTodo....")
+
+	mockRepo := new(MockTodoRepository)
+
+	todoService := service.NewTodoService(mockRepo)
+
+	todoID := "11111111-1111-1111-1111-111111111111"
+	accessToken := jwt.Token{Claims: jwt.RegisteredClaims{Subject: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}}
+
+	mockRepo.On("DeleteTodo", mock.Anything, mock.Anything).Return(domain.Todo{}, errors.New("DeleteTodo error"))
+
+	todoIDResult, err := todoService.DeleteTodo(todoID, &accessToken)
+
+	a1 := assert.Error(t, err)
+	a2 := assert.Equal(t, "", todoIDResult)
+	a3 := mockRepo.AssertExpectations(t)
+
+	if a1 && a2 && a3 {
+		fmt.Println("TestFailDeleteTodo passed")
+		fmt.Println(" ")
+		return
+	}
+
+	fmt.Println("TestFailDeleteTodo failed")
 }

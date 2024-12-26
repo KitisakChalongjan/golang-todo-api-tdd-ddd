@@ -46,9 +46,9 @@ func (todoService *TodoService) GetTodosByUserID(userID string, accessToken *jwt
 	return allTodoVO, nil
 }
 
-func (todoService *TodoService) CreateTodo(todoDTO valueobject.CreateTodoVO) (string, error) {
+func (todoService *TodoService) CreateTodo(createTodoVO valueobject.CreateTodoVO) (string, error) {
 
-	todo, err := todoService.todoRepo.CreateTodo(todoDTO)
+	todo, err := todoService.todoRepo.CreateTodo(createTodoVO)
 	if err != nil {
 		return "", err
 	}
