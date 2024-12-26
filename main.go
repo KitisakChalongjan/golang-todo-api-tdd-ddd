@@ -11,9 +11,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
+	_ "github.com/swaggo/echo-swagger/example/docs"
 )
 
 func main() {
+
 	log.Println("initializing the application...")
 
 	if err := godotenv.Load(); err != nil {
@@ -45,6 +48,8 @@ func main() {
 		DB:        db,
 		SecretKey: secretKey,
 	}
+
+	e.GET("/swagger/*", echoSwagger.EchoWrapHandler())
 
 	if err := InitializeHandler(engine); err != nil {
 		log.Fatal(err)
