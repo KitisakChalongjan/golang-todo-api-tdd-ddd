@@ -1,21 +1,16 @@
-FROM golang:1.23.2 AS builder
+FROM golang:1.23.2 AS build
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-
+COPY . ./
 RUN go mod download
 
-COPY . .
+RUN CGO_ENABLED=0 go build -o /bin/todo-api
 
-RUN go build -o main .
+FROM debian:buster-slim
 
-FROM alpine:latest
+COPY --from=build /bin/todo-api /bin
 
-WORKDIR /app
+EXPOSE 1323
 
-COPY --from=builder /app/main .
-
-EXPOSE 8080
-
-ENTRYPOINT ["./main"]
+CMD [ "/bin/todo-api" ]

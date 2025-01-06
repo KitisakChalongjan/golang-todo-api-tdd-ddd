@@ -1,17 +1,24 @@
 package core
 
 import (
+	"fmt"
 	"golang-todo-api-tdd-ddd/domain"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
 )
 
 func ConnectPostgresDB() (*gorm.DB, error) {
 
-	connectionString := "user=postgres password=Dewsmaller1* dbname=postgres host=localhost port=5432 sslmode=disable"
+	DB_HOST := os.Getenv("DB_HOST")
+	DB_PORT := os.Getenv("DB_PORT")
+	DB_USER := os.Getenv("DB_USER")
+	DB_PASSWORD := os.Getenv("DB_PASSWORD")
+	DB_NAME := os.Getenv("DB_NAME")
+
+	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME, DB_HOST, DB_PORT)
 
 	dialector := postgres.Open(connectionString)
 
@@ -20,7 +27,7 @@ func ConnectPostgresDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	log.Println("database connected.")
+	log.Printf("database connected(DB_HOST=%s)", DB_HOST)
 
 	err = db.AutoMigrate(&domain.Todo{}, &domain.User{}, &domain.Role{})
 	if err != nil {

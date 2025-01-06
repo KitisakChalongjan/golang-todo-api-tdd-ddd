@@ -17,8 +17,12 @@ func main() {
 
 	log.Println("initializing the application...")
 
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("error loading .env file")
+	_, err := os.Stat(".env")
+	if err == nil {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("error loading .env file")
+		}
 	}
 
 	secretKey := os.Getenv("JWT_SECRET")
@@ -70,3 +74,6 @@ func InitializeHandler(engine core.Engine) error {
 
 	return nil
 }
+
+// docker build -t todo=api
+// docker run --name todo-api-1 -e JWT_SECRET=golang-todo-api-tdd-ddd -e DB_HOST=172.17.0.2 -e DB_PORT=5432 -e DB_USER=postgres -e DB_PASSWORD=Dewsmaller1* -e DB_NAME=postgres -p 1323:1323 -d todo-api-1
