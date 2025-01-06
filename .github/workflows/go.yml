@@ -28,7 +28,7 @@ jobs:
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: Dewlonger15@gmail.com
+        username: dewlonger
         password: Dewsmaller1*
 
     - name: Push Docker Image
