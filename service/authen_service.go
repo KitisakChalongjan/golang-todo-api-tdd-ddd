@@ -48,7 +48,7 @@ func (service *AuthenService) SignIn(signInVO valueobject.SignInVO, secretKey st
 		"sub":   getUserVO.ID,
 		"roles": getUserVO.Roles,
 		"iat":   jwt.NewNumericDate(time.Now()),
-		"exp":   jwt.NewNumericDate(time.Now().AddDate(0, 0, 7)),
+		"exp":   jwt.NewNumericDate(time.Now().AddDate(0, 0, 30)),
 	}
 
 	accessTokenString, err := helper.GenerateAccessTokenWithClaims(jwtClaims, secretKey)

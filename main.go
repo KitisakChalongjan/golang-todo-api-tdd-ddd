@@ -55,7 +55,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = e.Start(":1323"); err != nil {
+	if err = e.Start("0.0.0.0:1323"); err != nil {
 
 		log.Fatal(err)
 	}
@@ -75,5 +75,6 @@ func InitializeHandler(engine core.Engine) error {
 	return nil
 }
 
-// docker build -t todo=api
-// docker run --name todo-api-1 -e JWT_SECRET=golang-todo-api-tdd-ddd -e DB_HOST=172.17.0.2 -e DB_PORT=5432 -e DB_USER=postgres -e DB_PASSWORD=Dewsmaller1* -e DB_NAME=postgres -p 1323:1323 -d todo-api-1
+// docker build -t todo-api
+// docker run --name todo-api-1 -e JWT_SECRET=golang-todo-api-tdd-ddd -e DB_HOST=172.17.0.2 -e DB_PORT=5432 -e DB_USER=postgres -e DB_PASSWORD=Dewsmaller1* -e DB_NAME=postgres -p 1323:1323 -d todo-api
+// docker run -d -v postgresql-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=Dewsmaller1\ -p 5433:5432 --name postgresql-main postgres
