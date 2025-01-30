@@ -49,4 +49,25 @@ jobs:
     - name: Test Services
       run: go test -v ./test/service
 
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23.2'
+
+    - name: Build
+      run: go build -v ./
+
+    - name: Build Docker Image
+      run: |
+        docker build -t todo-api-2:latest .
+
+    - name: Run Docker Container
+      run: |
+        docker run --name todo-api-2 -e JWT_SECRET=golang-todo-api-tdd-ddd -e DB_HOST=172.17.0.2 -e DB_PORT=5432 -e DB_USER=postgres -e DB_PASSWORD=Dewsmaller1* -e DB_NAME=postgres -p 1323:1323 -d todo-api:latest
+
   
