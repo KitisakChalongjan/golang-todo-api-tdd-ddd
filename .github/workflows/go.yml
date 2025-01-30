@@ -68,6 +68,6 @@ jobs:
 
     - name: Run Docker Container
       run: |
-        docker run --name todo-api-2 -e JWT_SECRET=golang-todo-api-tdd-ddd -e DB_HOST=172.17.0.2 -e DB_PORT=5432 -e DB_USER=postgres -e DB_PASSWORD=Dewsmaller1* -e DB_NAME=postgres -p 1323:1323 -d todo-api:latest
+        docker run --name todo-api-2 -e JWT_SECRET=golang-todo-api-tdd-ddd -e DB_HOST=172.17.0.2 -e DB_PORT=5432 -e DB_USER=postgres -e DB_PASSWORD=Dewsmaller1* -e DB_NAME=postgres -p 1323:1323 -d todo-api-2:latest
 
   
