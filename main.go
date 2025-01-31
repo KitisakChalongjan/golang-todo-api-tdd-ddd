@@ -78,3 +78,4 @@ func InitializeHandler(engine core.Engine) error {
 // docker build -t todo-api
 // docker run --name todo-api-1 -e JWT_SECRET=golang-todo-api-tdd-ddd -e DB_HOST=172.17.0.2 -e DB_PORT=5432 -e DB_USER=postgres -e DB_PASSWORD=Dewsmaller1* -e DB_NAME=postgres -p 1323:1323 -d todo-api
 // docker run -d -v postgresql-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=Dewsmaller1\ -p 5433:5432 --name postgresql-main postgres
+// docker run -d --name redis-server -p 6380:6379 -v redis-data:/data redis:alpine
