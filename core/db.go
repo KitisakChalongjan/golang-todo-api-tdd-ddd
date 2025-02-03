@@ -29,7 +29,14 @@ func ConnectPostgresDB() (*gorm.DB, error) {
 
 	log.Printf("database connected(DB_HOST=%s)", DB_HOST)
 
-	err = db.AutoMigrate(&domain.Todo{}, &domain.User{}, &domain.Role{})
+	err = db.AutoMigrate(
+		&domain.Todo{},
+		&domain.User{},
+		&domain.Role{},
+		&domain.UsersRoles{},
+		&domain.Transaction{},
+		&domain.TransactionType{},
+	)
 	if err != nil {
 		return nil, err
 	}
